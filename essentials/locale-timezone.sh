@@ -76,6 +76,6 @@ if [ "$HAVE_SYSTEMD" = "1" ]; then
     timedatectl | sed 's/^/   /'
 else
     echo "   Timezone: $(readlink -f /etc/localtime 2>/dev/null | sed 's|^/usr/share/zoneinfo/||')"
-    echo "   Locale:   $(cat /etc/default/locale 2>/dev/null | head -1)"
+    echo "   Locale:   $(head -1 /etc/default/locale 2>/dev/null)"
 fi
 echo "💡 New shells will pick up the locale; existing ones keep the old LANG."
