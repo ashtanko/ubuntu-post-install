@@ -42,6 +42,14 @@ else
         echo "❌ Node.js install failed"
         exit 1
     fi
+
+    # On newer Ubuntu (e.g. 26.04) the distro nodejs package wins the version
+    # comparison against NodeSource and ships without npm — pull npm separately.
+    if ! command -v npm &>/dev/null; then
+        echo "📦 Installing npm separately (distro nodejs doesn't bundle it)..."
+        sudo apt-get install -y npm
+    fi
+
     echo "✅ Node.js $(node -v) installed"
 fi
 
