@@ -59,13 +59,17 @@ echo "🔧 Configuring git to sign commits with key $KEY_ID..."
 git config --global user.signingkey "$KEY_ID"
 git config --global commit.gpgsign true
 
-# Persist GPG_TTY so the agent can prompt for passphrase in terminal
+# Persist GPG_TTY so the agent can prompt for passphrase in terminal.
+# Single quotes are intentional — `$(tty)` must be evaluated when each shell starts, not now.
+# shellcheck disable=SC2016
 GPG_TTY_LINE='export GPG_TTY=$(tty)'
 for RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
     if [ -f "$RC" ] && ! grep -q 'GPG_TTY' "$RC"; then
-        echo "" >> "$RC"
-        echo "# GPG signing" >> "$RC"
-        echo "$GPG_TTY_LINE" >> "$RC"
+        {
+            echo ""
+            echo "# GPG signing"
+            echo "$GPG_TTY_LINE"
+        } >> "$RC"
         echo "✅ Added GPG_TTY to $RC"
     fi
 done

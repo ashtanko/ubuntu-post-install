@@ -32,7 +32,8 @@ declare -A RESULTS
 run_script() {
     local label="$1"
     local script="$2"
-    local marker="$MARKER_DIR/$(echo "$script" | tr '/' '_').done"
+    local marker
+    marker="$MARKER_DIR/$(echo "$script" | tr '/' '_').done"
 
     if [ -f "$marker" ]; then
         warn "$label already ran — skipping (delete $marker to re-run)"
@@ -51,7 +52,10 @@ run_script() {
     fi
 }
 
-# Menu items: "Label|script/path.sh"
+# Menu items: "Label|script/path.sh".
+# Each *_ITEMS array is consumed by select_items via `local -n` namerefs (linter
+# can't trace these, hence the SC2034 disables on each declaration).
+# shellcheck disable=SC2034
 declare -a ESSENTIALS_ITEMS=(
     "Swap file|essentials/swap.sh"
     "UFW firewall|essentials/firewall.sh"
@@ -60,18 +64,21 @@ declare -a ESSENTIALS_ITEMS=(
     "GNOME quality-of-life settings|essentials/gnome-settings.sh"
     "System info dump|essentials/system-info.sh"
 )
+# shellcheck disable=SC2034
 declare -a SYSTEM_ITEMS=(
     "Base system (apt upgrade, build tools, git)|system/base.sh"
     "Keyboard remapping (keyd macOS-style)|system/keyboard.sh"
     "GPG key + git signing|system/gpg.sh"
     "SSH key generation|system/ssh.sh"
 )
+# shellcheck disable=SC2034
 declare -a APPS_ITEMS=(
     "Google Chrome|apps/browsers.sh"
     "Guake terminal|apps/guake.sh"
     "Warp terminal|apps/warp.sh"
     "Visual Studio Code|apps/vscode.sh"
 )
+# shellcheck disable=SC2034
 declare -a DEV_ITEMS=(
     "Java (OpenJDK)|dev/java.sh"
     "Docker Engine + Docker Desktop|dev/docker.sh"
@@ -81,6 +88,7 @@ declare -a DEV_ITEMS=(
     "Rust (via rustup)|dev/rust.sh"
     "Go SDK|dev/go.sh"
 )
+# shellcheck disable=SC2034
 declare -a TOOLS_ITEMS=(
     "Zsh + Oh My Zsh|tools/zsh.sh"
     "Claude Code CLI|tools/claude.sh"
@@ -91,12 +99,14 @@ declare -a TOOLS_ITEMS=(
     "Backup home (manual; configure in .env)|tools/backup-home.sh"
     "System maintenance (clean caches/logs)|tools/system-maintenance.sh"
 )
+# shellcheck disable=SC2034
 declare -a IDE_ITEMS=(
     "Zed editor|ide/zed.sh"
     "VS Code extensions (from .env)|ide/vscode-extensions.sh"
     "JetBrains Toolbox|ide/jetbrains-toolbox.sh"
     "Neovim (latest)|ide/nvim.sh"
 )
+# shellcheck disable=SC2034
 declare -a AI_ITEMS=(
     "Ollama (local LLMs)|ai/ollama.sh"
     "llama.cpp (build from source)|ai/llama-cpp.sh"
@@ -105,6 +115,7 @@ declare -a AI_ITEMS=(
     "opencode|ai/opencode.sh"
     "prompt-runner (universal LLM CLI)|ai/prompt-runner.sh"
 )
+# shellcheck disable=SC2034
 declare -a SOFTWARE_ITEMS=(
     "VirtualBox|software/virtualbox.sh"
     "GNOME Boxes + virt-manager|software/boxes.sh"
@@ -119,7 +130,8 @@ print_menu() {
     for entry in "${_items[@]}"; do
         local label="${entry%%|*}"
         local script="${entry##*|}"
-        local marker="$MARKER_DIR/$(echo "$script" | tr '/' '_').done"
+        local marker
+        marker="$MARKER_DIR/$(echo "$script" | tr '/' '_').done"
         local status=""
         [ -f "$marker" ] && status="${GREEN} ✓${RESET}"
         echo -e "    ${BOLD}$i)${RESET} $label$status"

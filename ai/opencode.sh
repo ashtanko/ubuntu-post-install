@@ -29,13 +29,17 @@ else
     exit 1
 fi
 
-# Persist opencode bin in shell configs
+# Persist opencode bin in shell configs.
+# Single quotes are intentional — `$HOME` / `$PATH` must be literal in the rc file.
+# shellcheck disable=SC2016
 OPENCODE_PATH_LINE='export PATH="$HOME/.opencode/bin:$PATH"'
 for RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
     if [ -f "$RC" ] && ! grep -q '.opencode/bin' "$RC"; then
-        echo "" >> "$RC"
-        echo "# opencode" >> "$RC"
-        echo "$OPENCODE_PATH_LINE" >> "$RC"
+        {
+            echo ""
+            echo "# opencode"
+            echo "$OPENCODE_PATH_LINE"
+        } >> "$RC"
         echo "✅ Added opencode to PATH in $RC"
     fi
 done

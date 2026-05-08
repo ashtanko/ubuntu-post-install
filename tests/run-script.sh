@@ -16,7 +16,7 @@ MODE="${MANIFEST_MODE:-smoke}"
 WORK="$HOME/work"
 rm -rf "$WORK"
 cp -r /home/tester/repo "$WORK"
-cd "$WORK"
+cd "$WORK" || { echo "❌ cd $WORK failed"; exit 1; }
 
 # Drop in CI .env (overrides anything in tests/fixtures)
 cp tests/fixtures/test.env .env
@@ -72,7 +72,7 @@ snapshot() {
         echo "## profile-bytes"
         wc -c "$HOME/.profile" 2>/dev/null || true
         echo "## local-bin"
-        ls -1 "$HOME/.local/bin" 2>/dev/null | sort
+        find "$HOME/.local/bin" -mindepth 1 -maxdepth 1 -printf '%f\n' 2>/dev/null | sort
     } > "$out"
 }
 

@@ -48,6 +48,9 @@ fi
 # spawned agent died with the script and the ssh-add was silently lost.
 # Instead, install an idempotent block in the user's interactive rc files so
 # every shell starts (or reuses) an agent and auto-loads the key.
+# Single quotes are intentional — vars like `$SSH_AUTH_SOCK` and `$HOME` must be
+# evaluated each time the rc file is sourced, not at install time.
+# shellcheck disable=SC2016
 SSH_AGENT_BLOCK='# ssh-agent autostart (added by ubuntu-setup)
 if [ -z "${SSH_AUTH_SOCK:-}" ]; then
     if [ -S "$HOME/.ssh/agent.sock" ] && SSH_AUTH_SOCK="$HOME/.ssh/agent.sock" ssh-add -l >/dev/null 2>&1; then

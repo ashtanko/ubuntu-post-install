@@ -14,7 +14,7 @@ echo "🚀 Installing Go..."
 GO_INSTALL_DIR="${GO_INSTALL_DIR:-/usr/local/go}"
 
 if [ -d "$GO_INSTALL_DIR" ]; then
-    echo "✅ Go already installed ($($GO_INSTALL_DIR/bin/go version))"
+    echo "✅ Go already installed ($("$GO_INSTALL_DIR"/bin/go version))"
     echo "💡 To upgrade: remove /usr/local/go and re-run this script"
     exit 0
 fi
@@ -83,9 +83,11 @@ sudo tar -C /usr/local -xzf "$TMP/$TARBALL"
 GO_PATH_LINE="export PATH=\$PATH:${GO_INSTALL_DIR}/bin"
 for RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
     if [ -f "$RC" ] && ! grep -q "${GO_INSTALL_DIR}/bin" "$RC"; then
-        echo "" >> "$RC"
-        echo "# Go SDK" >> "$RC"
-        echo "$GO_PATH_LINE" >> "$RC"
+        {
+            echo ""
+            echo "# Go SDK"
+            echo "$GO_PATH_LINE"
+        } >> "$RC"
         echo "✅ Added Go to PATH in $RC"
     fi
 done

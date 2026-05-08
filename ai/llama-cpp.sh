@@ -54,13 +54,18 @@ for tool in llama-cli llama-server llama-quantize llama-bench; do
     fi
 done
 
-# Ensure ~/.local/bin is on PATH (idempotent)
+# Ensure ~/.local/bin is on PATH (idempotent).
+# Single quotes are intentional — `$HOME` / `$PATH` must be literal in the rc file.
+# shellcheck disable=SC2016
 PATH_LINE='[ -d "$HOME/.local/bin" ] && case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin:$PATH";; esac'
 for RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
+    # shellcheck disable=SC2016
     if [ -f "$RC" ] && ! grep -qF '$HOME/.local/bin' "$RC"; then
-        echo "" >> "$RC"
-        echo "# ~/.local/bin (added by llama-cpp.sh)" >> "$RC"
-        echo "$PATH_LINE" >> "$RC"
+        {
+            echo ""
+            echo "# ~/.local/bin (added by llama-cpp.sh)"
+            echo "$PATH_LINE"
+        } >> "$RC"
         echo "✅ Added \$HOME/.local/bin to PATH in $RC"
     fi
 done

@@ -25,15 +25,20 @@ curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs | sh -s -- -y
 # shellcheck source=/dev/null
 . "$HOME/.cargo/env"
 
-# Persist cargo env and PATH in shell configs
+# Persist cargo env and PATH in shell configs.
+# Single quotes are intentional — we want literal `$HOME` written into the rc files.
+# shellcheck disable=SC2016
 CARGO_ENV_LINE='[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"'
+# shellcheck disable=SC2016
 CARGO_PATH_LINE='export PATH="$HOME/.cargo/bin:$PATH"'
 for RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
     if [ -f "$RC" ] && ! grep -q '.cargo/env' "$RC"; then
-        echo "" >> "$RC"
-        echo "# Rust / Cargo" >> "$RC"
-        echo "$CARGO_ENV_LINE" >> "$RC"
-        echo "$CARGO_PATH_LINE" >> "$RC"
+        {
+            echo ""
+            echo "# Rust / Cargo"
+            echo "$CARGO_ENV_LINE"
+            echo "$CARGO_PATH_LINE"
+        } >> "$RC"
         echo "✅ Added Cargo env and PATH to $RC"
     fi
 done

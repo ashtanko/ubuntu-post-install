@@ -45,9 +45,11 @@ export PATH="$PATH:$FLUTTER_BIN"
 PATH_SNIPPET="export PATH=\"\$PATH:$FLUTTER_BIN\""
 for RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
     if [ -f "$RC" ] && ! grep -qF "$FLUTTER_BIN" "$RC"; then
-        echo "" >> "$RC"
-        echo "# Flutter SDK" >> "$RC"
-        echo "$PATH_SNIPPET" >> "$RC"
+        {
+            echo ""
+            echo "# Flutter SDK"
+            echo "$PATH_SNIPPET"
+        } >> "$RC"
         echo "✅ Added Flutter PATH to $RC"
     fi
 done

@@ -37,7 +37,7 @@ CANDIDATES=(
 INCLUDE=()
 for p in "${CANDIDATES[@]}"; do
     if [ -e "$p" ]; then
-        INCLUDE+=("${p#$HOME/}")  # store as relative paths
+        INCLUDE+=("${p#"$HOME"/}")  # store as relative paths
     fi
 done
 

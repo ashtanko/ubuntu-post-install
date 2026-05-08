@@ -50,13 +50,18 @@ tar -xzf "$TMP/nvim.tar.gz" -C "$INSTALL_DIR" --strip-components=1
 mkdir -p "$BIN_DIR"
 ln -sf "$INSTALL_DIR/bin/nvim" "$NVIM_BIN"
 
-# Ensure ~/.local/bin is on PATH (idempotent)
+# Ensure ~/.local/bin is on PATH (idempotent).
+# Single quotes are intentional — `$HOME` / `$PATH` must be literal in the rc file.
+# shellcheck disable=SC2016
 PATH_LINE='[ -d "$HOME/.local/bin" ] && case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin:$PATH";; esac'
 for RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
+    # shellcheck disable=SC2016
     if [ -f "$RC" ] && ! grep -qF '$HOME/.local/bin' "$RC"; then
-        echo "" >> "$RC"
-        echo "# ~/.local/bin (added by nvim.sh)" >> "$RC"
-        echo "$PATH_LINE" >> "$RC"
+        {
+            echo ""
+            echo "# ~/.local/bin (added by nvim.sh)"
+            echo "$PATH_LINE"
+        } >> "$RC"
     fi
 done
 

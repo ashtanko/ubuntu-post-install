@@ -40,9 +40,11 @@ eval \"\$(pyenv init -)\""
 
 for RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
     if [ -f "$RC" ] && ! grep -q 'PYENV_ROOT' "$RC"; then
-        echo "" >> "$RC"
-        echo "# pyenv" >> "$RC"
-        printf '%s\n' "$PYENV_BLOCK" >> "$RC"
+        {
+            echo ""
+            echo "# pyenv"
+            printf '%s\n' "$PYENV_BLOCK"
+        } >> "$RC"
         echo "✅ Added pyenv config to $RC"
     fi
 done

@@ -54,9 +54,11 @@ NVM_BLOCK="export NVM_DIR=\"${NVM_DIR}\"
 
 for RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
     if [ -f "$RC" ] && ! grep -q 'NVM_DIR' "$RC"; then
-        echo "" >> "$RC"
-        echo "# NVM - Node Version Manager" >> "$RC"
-        echo "$NVM_BLOCK" >> "$RC"
+        {
+            echo ""
+            echo "# NVM - Node Version Manager"
+            echo "$NVM_BLOCK"
+        } >> "$RC"
         echo "✅ Added NVM config to $RC"
     fi
 done
