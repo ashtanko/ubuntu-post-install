@@ -59,6 +59,7 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 |---|---|
 | `browsers.sh` | Google Chrome |
 | `guake.sh` | Guake drop-down terminal |
+| `postman.sh` | Postman API client — official tarball into `$POSTMAN_INSTALL_DIR` (default `~/.local/share/Postman`), with `~/.local/bin/postman` symlink and `.desktop` entry |
 | `warp.sh` | Warp terminal |
 | `vscode.sh` | VS Code via Microsoft apt repo |
 
@@ -167,6 +168,7 @@ Copy `.env.example` to `.env` and fill in your values. `.env` is gitignored. Eve
 | `VSCODE_EXTENSIONS` | ide/vscode-extensions.sh | — empty = no-op |
 | `JETBRAINS_TOOLBOX_DIR` | ide/jetbrains-toolbox.sh | `$HOME/.local/share/JetBrains/Toolbox` |
 | `NVIM_INSTALL_DIR` | ide/nvim.sh | `$HOME/.local/share/nvim-stable` |
+| `POSTMAN_INSTALL_DIR` | apps/postman.sh | `$HOME/.local/share/Postman` |
 | `ENABLE_GIT_COMMIT_SIGNING` | tools/git-config.sh | `no` |
 | `BACKUP_DIR` | tools/backup-home.sh | `$HOME/backups` |
 | `BACKUP_ENCRYPT` | tools/backup-home.sh | `no` |

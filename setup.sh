@@ -85,6 +85,7 @@ declare -a SYSTEM_ITEMS=(
 declare -a APPS_ITEMS=(
     "Google Chrome|apps/browsers.sh"
     "Guake terminal|apps/guake.sh"
+    "Postman|apps/postman.sh"
     "Warp terminal|apps/warp.sh"
     "Visual Studio Code|apps/vscode.sh"
 )
