@@ -74,6 +74,7 @@ SCRIPTS=(
 
   # root/
   "setup.sh|no|||interactive menu orchestrator; tested via individual scripts"
+  "install.sh|no|||remote installer; downloads release tarball, not exercised in container tests"
 )
 
 # ---- Helpers ---------------------------------------------------------------

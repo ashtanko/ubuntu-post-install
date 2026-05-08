@@ -20,7 +20,25 @@ Automated, idempotent shell scripts to provision a fresh Ubuntu installation wit
 - `sudo` privileges (you'll be prompted as needed)
 - Network access for package downloads
 
-## Quick Start
+## Quick install
+
+Install the latest release without cloning the repo:
+
+```bash
+curl -fsSL https://github.com/ashtanko/ubuntu-post-install/releases/latest/download/install.sh | bash
+ubuntu-post-install --version          # confirm install
+ubuntu-post-install                    # launch the interactive menu
+```
+
+Pin a specific version:
+
+```bash
+VERSION=v1.0.0 bash <(curl -fsSL https://github.com/ashtanko/ubuntu-post-install/releases/download/v1.0.0/install.sh)
+```
+
+The installer writes scripts to `~/.local/share/ubuntu-post-install/<version>/` and symlinks `~/.local/bin/ubuntu-post-install` (override with `PREFIX=` and `BIN_DIR=`). Make sure `~/.local/bin` is on your `PATH`.
+
+## Quick Start (from source)
 
 ```bash
 git clone https://github.com/ashtanko/ubuntu-post-install.git
@@ -106,6 +124,17 @@ bash tests/run-in-docker.sh 24.04 smoke dev/node.sh  # single script
 bash tests/lint.sh                                   # shellcheck on every .sh
 ```
 
+Or via the [Makefile](Makefile) (`make help` for the full list):
+
+```bash
+make check                      # lint + manifest coverage
+make smoke UBUNTU=22.04         # smoke stage on a specific Ubuntu version
+make smoke SCRIPT=dev/node.sh   # scope to one script
+make idempotency-all            # idempotency across every supported version
+make release-dry-run            # lint + build a release tarball locally
+make tag VERSION=1.0.0          # cut and push a release tag
+```
+
 CI runs both [`lint.yml`](.github/workflows/lint.yml) (shellcheck + manifest coverage) and [`docker-tests.yml`](.github/workflows/docker-tests.yml) (matrix across all supported Ubuntu versions × smoke/idempotency) on every push and pull request.
 
 Full testing guide: [docs/TESTING.md](docs/TESTING.md).
@@ -115,6 +144,7 @@ Full testing guide: [docs/TESTING.md](docs/TESTING.md).
 | Doc | What's in it |
 |---|---|
 | [docs/SETUP.md](docs/SETUP.md) | How `setup.sh` orchestrates runs: menu input, marker files, log layout, resume / reset |
+| [docs/PUSH.md](docs/PUSH.md) | How to cut and publish a new release (tag conventions, workflow, verification) |
 | [docs/SCRIPTS.md](docs/SCRIPTS.md) | Full inventory of every script with one-line purpose |
 | [docs/CONFIG.md](docs/CONFIG.md) | Every `.env` variable, its default, and which scripts read it |
 | [docs/TESTING.md](docs/TESTING.md) | Docker test harness, manifest format, CI workflows |

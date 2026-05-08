@@ -1,0 +1,112 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (without leading v) — for dry-run only'
+        required: true
+        default: '0.0.0-dev'
+
+permissions:
+  contents: write
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - run: bash tests/lint.sh
+      - run: bash tests/check-manifest-coverage.sh
+
+  smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu: ['22.04', '24.04', '25.04', '26.04']
+    name: smoke / ubuntu-${{ matrix.ubuntu }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: buildx-${{ matrix.ubuntu }}-${{ hashFiles('tests/Dockerfile') }}
+          restore-keys: |
+            buildx-${{ matrix.ubuntu }}-
+      - run: bash tests/run-in-docker.sh ${{ matrix.ubuntu }} smoke
+
+  release:
+    needs: [lint, smoke]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TAG="v${{ github.event.inputs.version }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          SEMVER="${TAG#v}"
+          echo "tag=$TAG"       >> "$GITHUB_OUTPUT"
+          echo "semver=$SEMVER" >> "$GITHUB_OUTPUT"
+
+      - name: Stage release tree
+        env:
+          SEMVER: ${{ steps.ver.outputs.semver }}
+        run: |
+          set -euo pipefail
+          STAGE="dist/ubuntu-post-install-${SEMVER}"
+          mkdir -p "$STAGE"
+          # Copy repo contents excluding VCS, IDE, build, and local config
+          rsync -a \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.idea/' \
+            --exclude='dist/' \
+            --exclude='.env' \
+            ./ "$STAGE/"
+          # Embed version
+          sed -i "s/^VERSION=.*/VERSION=\"${SEMVER}\"/" "$STAGE/setup.sh"
+          echo "$SEMVER" > "$STAGE/VERSION"
+
+      - name: Build tarball
+        env:
+          SEMVER: ${{ steps.ver.outputs.semver }}
+        run: |
+          set -euo pipefail
+          cd dist
+          tar -czf "ubuntu-post-install-${SEMVER}.tar.gz" "ubuntu-post-install-${SEMVER}"
+          rm -rf "ubuntu-post-install-${SEMVER}"
+          cp ../install.sh ./install.sh
+          sha256sum "ubuntu-post-install-${SEMVER}.tar.gz" install.sh > SHA256SUMS
+
+      - name: Upload artifacts (workflow_dispatch dry-run)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ steps.ver.outputs.semver }}
+          path: |
+            dist/ubuntu-post-install-${{ steps.ver.outputs.semver }}.tar.gz
+            dist/install.sh
+            dist/SHA256SUMS
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            dist/ubuntu-post-install-${{ steps.ver.outputs.semver }}.tar.gz
+            dist/install.sh
+            dist/SHA256SUMS

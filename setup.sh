@@ -8,6 +8,16 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Replaced at release time by .github/workflows/release.yml
+VERSION="dev"
+
+case "${1:-}" in
+    -v|--version)
+        echo "ubuntu-post-install $VERSION"
+        exit 0
+        ;;
+esac
+
 # Load user config — must happen before LOG_FILE is set so SETUP_LOG_FILE is available
 [[ -f "$SCRIPT_DIR/.env" ]] && { set -a; source "$SCRIPT_DIR/.env"; set +a; }
 
