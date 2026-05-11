@@ -133,6 +133,10 @@ declare -a SOFTWARE_ITEMS=(
     "GNOME Boxes + virt-manager|software/boxes.sh"
     "VMware Workstation prereqs|software/vmware.sh"
 )
+# shellcheck disable=SC2034
+declare -a VPN_ITEMS=(
+    "NordVPN|vpn/nord.sh"
+)
 
 print_menu() {
     local -n _items=$1
@@ -196,6 +200,7 @@ select_items TOOLS_ITEMS      "🔧 Tools"    QUEUE
 select_items IDE_ITEMS        "📝 IDE"      QUEUE
 select_items AI_ITEMS         "🤖 AI"       QUEUE
 select_items SOFTWARE_ITEMS   "💿 Software" QUEUE
+select_items VPN_ITEMS        "🔐 VPN"      QUEUE
 
 if [ ${#QUEUE[@]} -eq 0 ]; then
     warn "Nothing selected — exiting"

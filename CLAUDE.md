@@ -31,6 +31,7 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `ide/` | Editors: Zed, Neovim, JetBrains Toolbox, VS Code extensions bulk install |
 | `ai/` | LLM tooling: Ollama, llama.cpp, Gemini CLI, Antigravity, opencode, CodeRabbit, prompt-runner |
 | `software/` | Virtualization: VirtualBox, GNOME Boxes/virt-manager, VMware prereqs |
+| `vpn/` | VPN clients: NordVPN |
 | `mobile/` | Mobile dev utilities (manual; not wired into setup.sh) |
 | `setup.sh` | Interactive master installer with category menus and progress logging |
 
@@ -112,6 +113,11 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `boxes.sh` | GNOME Boxes + virt-manager |
 | `vmware.sh` | Installs kernel build prereqs for VMware Workstation Pro (manual download required) |
 
+### vpn/
+| Script | Purpose |
+|---|---|
+| `nord.sh` | NordVPN official Linux app via `install.sh`; adds user to `nordvpn` group; prints reminder to run `nordvpn login` |
+
 ### mobile/
 | Script | Purpose |
 |---|---|
@@ -129,7 +135,7 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 ## setup.sh Behaviour
 
 - Displays a category menu; user selects items by number, `a` (all), or `n` (none)
-- Recommended order (top-to-bottom in the menu): essentials → system → apps → dev → tools → ide → ai → software
+- Recommended order (top-to-bottom in the menu): essentials → system → apps → dev → tools → ide → ai → software → vpn
 - Logs all output with timestamps to `~/ubuntu-setup.log`
 - Tracks completed steps via marker files in `~/.cache/ubuntu-setup/`; delete a marker to force re-run
 - Shows a pass/fail/skipped summary at the end
@@ -170,6 +176,7 @@ Copy `.env.example` to `.env` and fill in your values. `.env` is gitignored. Eve
 | `JETBRAINS_TOOLBOX_DIR` | ide/jetbrains-toolbox.sh | `$HOME/.local/share/JetBrains/Toolbox` |
 | `NVIM_INSTALL_DIR` | ide/nvim.sh | `$HOME/.local/share/nvim-stable` |
 | `POSTMAN_INSTALL_DIR` | apps/postman.sh | `$HOME/.local/share/Postman` |
+| `CODERABBIT_INSTALL_DIR` | ai/coderabbit.sh | `$HOME/.local/bin` |
 | `ENABLE_GIT_COMMIT_SIGNING` | tools/git-config.sh | `no` |
 | `BACKUP_DIR` | tools/backup-home.sh | `$HOME/backups` |
 | `BACKUP_ENCRYPT` | tools/backup-home.sh | `no` |
