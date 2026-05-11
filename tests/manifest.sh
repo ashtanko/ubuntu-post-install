@@ -28,6 +28,7 @@ SCRIPTS=(
   # apps/
   "apps/browsers.sh|no|||Chrome installs but is GUI-only; not useful in CI"
   "apps/guake.sh|no|||GUI terminal emulator"
+  "apps/postman.sh|no|||Postman is a GUI app; needs display"
   "apps/vscode.sh|no|||GUI editor; pulls hundreds of MB for no test value"
   "apps/warp.sh|no|||GUI terminal"
 
@@ -68,6 +69,9 @@ SCRIPTS=(
   "software/boxes.sh|no|||GNOME Boxes needs KVM + display"
   "software/virtualbox.sh|no|||needs kernel modules + bare metal"
   "software/vmware.sh|no|||VMware Workstation needs manual download + kernel build"
+
+  # vpn/
+  "vpn/nord.sh|no|||installer invokes systemctl to enable nordvpnd; daemon won't start in container — verify on real hardware"
 
   # mobile/
   "mobile/zip_flutter_plugin.sh|no|||manual utility, not a setup script"
