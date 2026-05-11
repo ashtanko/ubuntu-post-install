@@ -43,7 +43,7 @@ Language runtimes and SDKs.
 
 | Script | Purpose |
 |---|---|
-| [java.sh](../dev/java.sh) | Default OpenJDK |
+| [java.sh](../dev/java.sh) | OpenJDK 8/11/17/21/25 — interactive menu or `JAVA_VERSION` env (installs side-by-side; switch default via `update-alternatives`) |
 | [docker.sh](../dev/docker.sh) | Docker Engine + Docker Desktop + user group |
 | [flutter.sh](../dev/flutter.sh) | Flutter SDK (stable), Android deps, Linux desktop deps |
 | [node.sh](../dev/node.sh) | Node.js via NVM — installs latest LTS |

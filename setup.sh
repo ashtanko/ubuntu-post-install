@@ -91,7 +91,7 @@ declare -a APPS_ITEMS=(
 )
 # shellcheck disable=SC2034
 declare -a DEV_ITEMS=(
-    "Java (OpenJDK)|dev/java.sh"
+    "Java (OpenJDK 8/11/17/21/25)|dev/java.sh"
     "Docker Engine + Docker Desktop|dev/docker.sh"
     "Flutter SDK + Android|dev/flutter.sh"
     "Node.js (via NVM)|dev/node.sh"
