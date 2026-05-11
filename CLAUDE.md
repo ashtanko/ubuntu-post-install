@@ -29,7 +29,7 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `dev/` | Development runtimes: Java, Docker, Flutter, Node, Python, Rust, Go |
 | `tools/` | Shell, CLI, and dev helpers: Zsh, Claude Code, CLI tools, fonts, git config, pre-commit, backup, maintenance |
 | `ide/` | Editors: Zed, Neovim, JetBrains Toolbox, VS Code extensions bulk install |
-| `ai/` | LLM tooling: Ollama, llama.cpp, Gemini CLI, Antigravity, opencode, prompt-runner |
+| `ai/` | LLM tooling: Ollama, llama.cpp, Gemini CLI, Antigravity, opencode, CodeRabbit, prompt-runner |
 | `software/` | Virtualization: VirtualBox, GNOME Boxes/virt-manager, VMware prereqs |
 | `mobile/` | Mobile dev utilities (manual; not wired into setup.sh) |
 | `setup.sh` | Interactive master installer with category menus and progress logging |
@@ -102,6 +102,7 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `gemini.sh` | Google Gemini CLI (installs Node via verified NodeSource repo if missing) |
 | `antigravity.sh` | Antigravity auto-updater via Google APT repo |
 | `opencode.sh` | opencode CLI via official installer |
+| `coderabbit.sh` | CodeRabbit CLI (AI code review) via official installer (`cli.coderabbit.ai/install.sh`) |
 | `prompt-runner.sh` | Installs `prompt` command — runs text/.prompt files against ollama / openai / anthropic |
 
 ### software/
