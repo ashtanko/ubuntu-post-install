@@ -29,7 +29,7 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `dev/` | Development runtimes: Java, Docker, Flutter, Node, Python, Rust, Go |
 | `tools/` | Shell, CLI, and dev helpers: Zsh, Claude Code, CLI tools, fonts, git config, pre-commit, backup, maintenance |
 | `ide/` | Editors: Zed, Neovim, JetBrains Toolbox, VS Code extensions bulk install |
-| `ai/` | LLM tooling: Ollama, llama.cpp, Gemini CLI, Antigravity, opencode, prompt-runner |
+| `ai/` | LLM tooling: Ollama, llama.cpp, Gemini CLI, Antigravity, opencode, CodeRabbit, prompt-runner |
 | `software/` | Virtualization: VirtualBox, GNOME Boxes/virt-manager, VMware prereqs |
 | `vpn/` | VPN clients: NordVPN |
 | `mobile/` | Mobile dev utilities (manual; not wired into setup.sh) |
@@ -103,6 +103,7 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `gemini.sh` | Google Gemini CLI (installs Node via verified NodeSource repo if missing) |
 | `antigravity.sh` | Antigravity auto-updater via Google APT repo |
 | `opencode.sh` | opencode CLI via official installer |
+| `coderabbit.sh` | CodeRabbit CLI (AI code review) via official installer (`cli.coderabbit.ai/install.sh`) |
 | `prompt-runner.sh` | Installs `prompt` command — runs text/.prompt files against ollama / openai / anthropic |
 
 ### software/
@@ -175,6 +176,7 @@ Copy `.env.example` to `.env` and fill in your values. `.env` is gitignored. Eve
 | `JETBRAINS_TOOLBOX_DIR` | ide/jetbrains-toolbox.sh | `$HOME/.local/share/JetBrains/Toolbox` |
 | `NVIM_INSTALL_DIR` | ide/nvim.sh | `$HOME/.local/share/nvim-stable` |
 | `POSTMAN_INSTALL_DIR` | apps/postman.sh | `$HOME/.local/share/Postman` |
+| `CODERABBIT_INSTALL_DIR` | ai/coderabbit.sh | `$HOME/.local/bin` |
 | `ENABLE_GIT_COMMIT_SIGNING` | tools/git-config.sh | `no` |
 | `BACKUP_DIR` | tools/backup-home.sh | `$HOME/backups` |
 | `BACKUP_ENCRYPT` | tools/backup-home.sh | `no` |

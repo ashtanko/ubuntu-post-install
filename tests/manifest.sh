@@ -63,6 +63,7 @@ SCRIPTS=(
   "ai/llama-cpp.sh|no|||CMake build OOMs / takes too long in CI containers; verify on real hardware"
   "ai/ollama.sh|partial||command -v ollama|systemd service won't start; binary installs"
   "ai/opencode.sh|yes||test -x \$HOME/.opencode/bin/opencode|"
+  "ai/coderabbit.sh|yes||test -x \$HOME/.local/bin/coderabbit|"
   "ai/prompt-runner.sh|yes||test -x \$HOME/.local/bin/prompt|"
 
   # software/

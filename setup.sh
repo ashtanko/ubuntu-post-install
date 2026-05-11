@@ -124,6 +124,7 @@ declare -a AI_ITEMS=(
     "Gemini CLI|ai/gemini.sh"
     "Antigravity|ai/antigravity.sh"
     "opencode|ai/opencode.sh"
+    "CodeRabbit CLI|ai/coderabbit.sh"
     "prompt-runner (universal LLM CLI)|ai/prompt-runner.sh"
 )
 # shellcheck disable=SC2034
