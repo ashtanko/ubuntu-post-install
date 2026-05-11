@@ -19,6 +19,13 @@ if [ -x "$CODERABBIT_BIN" ]; then
     exit 0
 fi
 
+# Upstream installer requires `unzip` for extracting the release archive
+if ! command -v unzip &>/dev/null; then
+    echo "📦 Installing unzip prerequisite..."
+    sudo apt-get update -qq
+    sudo apt-get install -y unzip
+fi
+
 echo "📦 Downloading and running CodeRabbit installer..."
 curl -fsSL https://cli.coderabbit.ai/install.sh | bash
 
