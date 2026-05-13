@@ -98,12 +98,17 @@ declare -a DEV_ITEMS=(
     "Python 3 + pyenv + poetry|dev/python.sh"
     "Rust (via rustup)|dev/rust.sh"
     "Go SDK|dev/go.sh"
+    "Databases (psql, redis, mysql, sqlite + pgcli/mycli)|dev/databases.sh"
+    "Kubernetes (kubectl, helm, k9s, kind, kustomize)|dev/kubernetes.sh"
+    "AWS CLI v2 + Session Manager plugin|dev/aws-cli.sh"
+    "Terraform + tflint + tfsec|dev/terraform.sh"
 )
 # shellcheck disable=SC2034
 declare -a TOOLS_ITEMS=(
     "Zsh + Oh My Zsh|tools/zsh.sh"
     "Claude Code CLI|tools/claude.sh"
     "CLI tools (bat, fzf, rg, eza, jq, gh...)|tools/cli-tools.sh"
+    "Modern CLI extras (lazygit, delta, zoxide, btop...)|tools/modern-cli.sh"
     "Developer Nerd Fonts|tools/fonts.sh"
     "Git config (aliases, defaults, signing)|tools/git-config.sh"
     "pre-commit framework|tools/pre-commit-setup.sh"

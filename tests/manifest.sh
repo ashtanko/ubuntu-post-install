@@ -33,13 +33,17 @@ SCRIPTS=(
   "apps/warp.sh|no|||GUI terminal"
 
   # dev/
+  "dev/aws-cli.sh|yes||command -v aws && command -v session-manager-plugin|"
+  "dev/databases.sh|yes||command -v psql && command -v redis-cli && command -v sqlite3 && command -v mysql|"
   "dev/docker.sh|partial|INSTALL_DOCKER_DESKTOP=no|command -v docker|Docker daemon won't start in container; CLI installs fine"
   "dev/flutter.sh|no|||Android SDK + Linux desktop deps are huge and need display"
   "dev/go.sh|yes|GO_INSTALL_DIR=/usr/local/go|/usr/local/go/bin/go version|"
   "dev/java.sh|yes||command -v javac && javac -version|"
+  "dev/kubernetes.sh|yes||command -v kubectl && command -v helm && command -v k9s && command -v kind && command -v kustomize|"
   "dev/node.sh|yes||FILE|"
   "dev/python.sh|yes||FILE|"
   "dev/rust.sh|yes||bash -lc 'command -v rustc && rustc --version'|"
+  "dev/terraform.sh|yes||command -v terraform && command -v tflint && command -v tfsec|"
 
   # tools/
   "tools/backup-home.sh|no|||interactive backup utility; not a setup script"
@@ -47,6 +51,7 @@ SCRIPTS=(
   "tools/cli-tools.sh|yes||FILE|"
   "tools/fonts.sh|yes||fc-list 2>/dev/null | grep -qi 'jetbrains\\|fira\\|hack' || ls \$HOME/.local/share/fonts/ | grep -qi nerd|"
   "tools/git-config.sh|yes|GIT_NAME=CI Tester,GIT_EMAIL=ci@example.com|git config --global --get pull.rebase|"
+  "tools/modern-cli.sh|yes||FILE|"
   "tools/pre-commit-setup.sh|yes||bash -lc 'command -v pre-commit'|"
   "tools/system-maintenance.sh|partial||true|journalctl/snap/flatfak likely absent; should no-op gracefully"
   "tools/zsh.sh|yes|INSTALL_OH_MY_ZSH=no|command -v zsh|"
