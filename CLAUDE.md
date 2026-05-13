@@ -74,6 +74,10 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `python.sh` | Python 3 + pyenv + pipx + poetry |
 | `rust.sh` | Rust toolchain via rustup |
 | `go.sh` | Latest Go SDK — version detection with fallback (VERSION endpoint → JSON) |
+| `databases.sh` | PostgreSQL/MySQL/Redis/SQLite CLI clients + pgcli/mycli/litecli (interactive shells via pipx) |
+| `kubernetes.sh` | kubectl + helm + k9s + kind + kustomize |
+| `aws-cli.sh` | AWS CLI v2 (official zip) + Session Manager plugin |
+| `terraform.sh` | Terraform (HashiCorp apt repo) + tflint + tfsec |
 
 ### tools/
 | Script | Purpose |
@@ -81,6 +85,7 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `zsh.sh` | Zsh + Oh My Zsh; set `INSTALL_OH_MY_ZSH=no` to skip OMZ |
 | `claude.sh` | Claude Code CLI (installs Node via verified NodeSource repo if missing) |
 | `cli-tools.sh` | bat, fzf, ripgrep, eza, jq, htop, tmux, tree, gh (GitHub CLI) |
+| `modern-cli.sh` | lazygit, delta, zoxide, btop, direnv, fd, dust, hyperfine, tldr (tealdeer) |
 | `fonts.sh` | JetBrains Mono, Fira Code, Hack — all Nerd Font variants |
 | `git-config.sh` | Opinionated git defaults (rebase pull, autosetup, aliases, global gitignore, optional GPG signing) |
 | `pre-commit-setup.sh` | pre-commit framework via pipx + git template hook + starter `.pre-commit-config.yaml` |
