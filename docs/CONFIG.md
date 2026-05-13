@@ -20,6 +20,7 @@ Every script auto-sources `.env` from the repo root before doing any work:
 | `NVM_DIR` | [dev/node.sh](../dev/node.sh) | `$HOME/.nvm` | NVM installation directory |
 | `PYENV_ROOT` | [dev/python.sh](../dev/python.sh) | `$HOME/.pyenv` | pyenv installation directory |
 | `GO_INSTALL_DIR` | [dev/go.sh](../dev/go.sh) | `/usr/local/go` | Go SDK extraction target (needs sudo) |
+| `JAVA_VERSION` | [dev/java.sh](../dev/java.sh) | interactive prompt (fallback `21`) | OpenJDK major: `8` \| `11` \| `17` \| `21` \| `25` |
 | `INSTALL_OH_MY_ZSH` | [tools/zsh.sh](../tools/zsh.sh) | `yes` | Set `no` to install plain Zsh only |
 | `INSTALL_DOCKER_DESKTOP` | [dev/docker.sh](../dev/docker.sh) | `yes` | Set `no` to skip the Docker Desktop GUI |
 | `SETUP_LOG_FILE` | [setup.sh](../setup.sh) | `$HOME/ubuntu-setup.log` | Where the master installer appends timestamped output |

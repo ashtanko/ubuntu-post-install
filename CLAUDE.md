@@ -67,7 +67,7 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 ### dev/
 | Script | Purpose |
 |---|---|
-| `java.sh` | Default OpenJDK |
+| `java.sh` | OpenJDK 8/11/17/21/25 — interactive menu or `JAVA_VERSION` env; installs side-by-side, switch default via `update-alternatives` |
 | `docker.sh` | Docker Engine + Docker Desktop + user group |
 | `flutter.sh` | Flutter SDK (stable), Android deps, Linux desktop deps |
 | `node.sh` | Node.js via NVM — installs latest LTS |
@@ -157,6 +157,7 @@ Copy `.env.example` to `.env` and fill in your values. `.env` is gitignored. Eve
 | `NVM_DIR` | dev/node.sh | `$HOME/.nvm` |
 | `PYENV_ROOT` | dev/python.sh | `$HOME/.pyenv` |
 | `GO_INSTALL_DIR` | dev/go.sh | `/usr/local/go` |
+| `JAVA_VERSION` | dev/java.sh | interactive prompt (fallback `21`) |
 | `INSTALL_OH_MY_ZSH` | tools/zsh.sh | `yes` |
 | `INSTALL_DOCKER_DESKTOP` | dev/docker.sh | `yes` |
 | `SETUP_LOG_FILE` | setup.sh | `$HOME/ubuntu-setup.log` |
