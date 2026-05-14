@@ -81,6 +81,7 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `zsh.sh` | Zsh + Oh My Zsh; set `INSTALL_OH_MY_ZSH=no` to skip OMZ |
 | `claude.sh` | Claude Code CLI (installs Node via verified NodeSource repo if missing) |
 | `cli-tools.sh` | bat, fzf, ripgrep, eza, jq, htop, tmux, tree, gh (GitHub CLI) |
+| `btop.sh` | btop — modern resource/process monitor (apt) |
 | `fonts.sh` | JetBrains Mono, Fira Code, Hack — all Nerd Font variants |
 | `git-config.sh` | Opinionated git defaults (rebase pull, autosetup, aliases, global gitignore, optional GPG signing) |
 | `pre-commit-setup.sh` | pre-commit framework via pipx + git template hook + starter `.pre-commit-config.yaml` |
