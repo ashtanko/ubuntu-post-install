@@ -43,6 +43,7 @@ SCRIPTS=(
 
   # tools/
   "tools/backup-home.sh|no|||interactive backup utility; not a setup script"
+  "tools/btop.sh|yes||FILE|"
   "tools/claude.sh|yes||command -v claude|"
   "tools/cli-tools.sh|yes||FILE|"
   "tools/fonts.sh|yes||fc-list 2>/dev/null | grep -qi 'jetbrains\\|fira\\|hack' || ls \$HOME/.local/share/fonts/ | grep -qi nerd|"
