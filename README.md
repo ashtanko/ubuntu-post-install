@@ -84,7 +84,7 @@ Browse [docs/SCRIPTS.md](docs/SCRIPTS.md) for the complete inventory. Categories
 | [dev/](dev/) | Runtimes: Java, Docker, Flutter, Node (NVM), Python (pyenv), Rust, Go |
 | [tools/](tools/) | Shell + CLI: Zsh + Oh My Zsh, Claude Code, bat/fzf/rg/eza/jq, Nerd Fonts, git config, pre-commit, backup, maintenance |
 | [ide/](ide/) | Editors: Zed, Neovim, JetBrains Toolbox, VS Code extensions |
-| [ai/](ai/) | LLM tooling: Ollama, llama.cpp, Gemini CLI, Antigravity, opencode, prompt-runner |
+| [ai/](ai/) | LLM tooling: Ollama, llama.cpp, Gemini CLI, Antigravity, opencode, CodeRabbit, prompt-runner |
 | [software/](software/) | Virtualization: VirtualBox, GNOME Boxes/virt-manager, VMware prereqs |
 | [mobile/](mobile/) | Manual mobile-dev utilities (not wired into setup.sh) |
 
