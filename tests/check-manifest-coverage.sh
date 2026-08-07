@@ -11,8 +11,56 @@ cd "$REPO_ROOT"
 # shellcheck source=manifest.sh
 source "$REPO_ROOT/tests/manifest.sh"
 
-mapfile -t found < <(find . -name '*.sh' -not -path './.git/*' -not -path './tests/*' -printf '%P\n' | sort)
+mapfile -t found < <(find . -name '*.sh' \
+    -not -path './.git/*' \
+    -not -path './.omx/*' \
+    -not -path './dist/*' \
+    -not -path './tests/*' \
+    -printf '%P\n' | sort)
 mapfile -t listed < <(manifest_paths | sort)
+
+declare -A seen=()
+schema_errors=()
+home_token="\$HOME/"
+braced_home_token="\${HOME}/"
+for entry in "${SCRIPTS[@]}"; do
+    IFS='|' read -r path compat _env_vars verify reason state_paths extra <<<"$entry"
+    if [[ -n "${seen[$path]:-}" ]]; then
+        schema_errors+=("duplicate path: $path")
+    fi
+    seen["$path"]=1
+    case "$compat" in
+        yes|partial|no) ;;
+        *) schema_errors+=("$path: invalid compat '$compat'") ;;
+    esac
+    if [[ "$compat" == no || "$compat" == partial ]] && [[ -z "$reason" ]]; then
+        schema_errors+=("$path: compat=$compat requires a reason")
+    fi
+    if [[ "$compat" != no ]]; then
+        if [[ -z "$verify" ]]; then
+            schema_errors+=("$path: runnable entry requires a verifier")
+        elif [[ "$verify" =~ ^[[:space:]]*(true|:)[[:space:]]*$ ]]; then
+            schema_errors+=("$path: verifier is vacuous")
+        elif [[ "$verify" == FILE ]]; then
+            verify_file="$REPO_ROOT/tests/verify/${path//\//_}"
+            [[ -f "$verify_file" ]] || schema_errors+=("$path: missing verifier file $verify_file")
+        fi
+    fi
+    if [[ -n "$state_paths" ]]; then
+        IFS=',' read -ra configured_paths <<<"$state_paths"
+        for configured_path in "${configured_paths[@]}"; do
+            if [[ "$configured_path" == *'/../'* || "$configured_path" == */.. ]]; then
+                schema_errors+=("$path: unsafe state path '$configured_path'")
+                continue
+            fi
+            case "$configured_path" in
+                "$home_token"*|"$braced_home_token"*|/etc/*|/opt/*|/usr/local/*|/var/lib/*) ;;
+                *) schema_errors+=("$path: unsafe state path '$configured_path'") ;;
+            esac
+        done
+    fi
+    [[ -z "$extra" ]] || schema_errors+=("$path: too many manifest fields")
+done
 
 # Detect entries in manifest that no longer exist on disk
 stale=()
@@ -31,6 +79,11 @@ for p in "${found[@]}"; do
 done
 
 fail=0
+if [ "${#schema_errors[@]}" -gt 0 ]; then
+    echo "❌ Invalid manifest entries:"
+    printf '   - %s\n' "${schema_errors[@]}"
+    fail=1
+fi
 if [ "${#missing[@]}" -gt 0 ]; then
     echo "❌ Scripts missing from tests/manifest.sh:"
     printf '   - %s\n' "${missing[@]}"

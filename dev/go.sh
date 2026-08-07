@@ -7,16 +7,24 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[[ -f "$REPO_ROOT/.env" ]] && { set -a; source "$REPO_ROOT/.env"; set +a; }
+CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
+# shellcheck source=lib/config.bash
+source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
+load_config "$REPO_ROOT"
 
 echo "🚀 Installing Go..."
 
 GO_INSTALL_DIR="${GO_INSTALL_DIR:-/usr/local/go}"
 
-if [ -d "$GO_INSTALL_DIR" ]; then
-    echo "✅ Go already installed ($("$GO_INSTALL_DIR"/bin/go version))"
-    echo "💡 To upgrade: remove /usr/local/go and re-run this script"
-    exit 0
+if [ -e "$GO_INSTALL_DIR" ]; then
+    if [ -x "$GO_INSTALL_DIR/bin/go" ] && "$GO_INSTALL_DIR/bin/go" version &>/dev/null; then
+        echo "✅ Go already installed ($("$GO_INSTALL_DIR"/bin/go version))"
+        echo "💡 To upgrade: remove $GO_INSTALL_DIR and re-run this script"
+        exit 0
+    fi
+    echo "❌ $GO_INSTALL_DIR exists but is not a complete Go installation"
+    echo "💡 Move or remove it, then re-run this script"
+    exit 1
 fi
 
 # Fetch latest stable version number.
@@ -24,7 +32,10 @@ fi
 # Fallback: parse the documented JSON at https://go.dev/dl/?mode=json — pick the
 # first entry where stable=true.
 echo "🔍 Fetching latest Go version..."
-GO_VERSION=$(curl -fsSL "https://go.dev/VERSION?m=text" 2>/dev/null | head -1 || true)
+GO_VERSION="${GO_VERSION:-}"
+if [ -z "$GO_VERSION" ]; then
+    GO_VERSION=$(curl -fsSL "https://go.dev/VERSION?m=text" 2>/dev/null | head -1 || true)
+fi
 
 if [[ ! "$GO_VERSION" =~ ^go[0-9] ]]; then
     echo "⚠️  Primary version endpoint returned unexpected output — falling back to dl/?mode=json"
@@ -48,7 +59,7 @@ echo "📥 Latest Go: $GO_VERSION"
 ARCH=$(dpkg --print-architecture)
 # dpkg uses 'amd64'/'arm64' which matches Go's naming
 TARBALL="${GO_VERSION}.linux-${ARCH}.tar.gz"
-URL="https://go.dev/dl/${TARBALL}"
+URL="${GO_ARCHIVE_URL:-https://go.dev/dl/${TARBALL}}"
 
 echo "📦 Downloading $TARBALL..."
 TMP=$(mktemp -d)
@@ -58,8 +69,10 @@ wget -q --show-progress -O "$TMP/$TARBALL" "$URL"
 
 # Verify checksum
 echo "🔒 Verifying checksum..."
-EXPECTED_SHA=$(curl -fsSL "https://go.dev/dl/?mode=json" \
-    | python3 -c "
+EXPECTED_SHA="${GO_ARCHIVE_SHA256:-}"
+if [ -z "$EXPECTED_SHA" ] && [ -z "${GO_ARCHIVE_URL:-}" ]; then
+    EXPECTED_SHA=$(curl -fsSL "https://go.dev/dl/?mode=json" \
+        | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
 for release in data:
@@ -68,16 +81,34 @@ for release in data:
             print(f['sha256'])
             sys.exit(0)
 ")
+fi
 
 if [ -n "$EXPECTED_SHA" ]; then
     echo "$EXPECTED_SHA  $TMP/$TARBALL" | sha256sum --check --quiet
     echo "✅ Checksum verified"
 else
-    echo "⚠️  Could not fetch checksum — proceeding without verification"
+    echo "❌ Could not obtain a checksum; refusing an unverified Go archive"
+    exit 1
 fi
 
 echo "📦 Extracting to $GO_INSTALL_DIR..."
-sudo tar -C /usr/local -xzf "$TMP/$TARBALL"
+mkdir -p "$TMP/extract"
+tar -C "$TMP/extract" -xzf "$TMP/$TARBALL"
+if [ ! -x "$TMP/extract/go/bin/go" ] || ! "$TMP/extract/go/bin/go" version &>/dev/null; then
+    echo "❌ Downloaded archive does not contain a working Go installation"
+    exit 1
+fi
+
+INSTALL_PARENT=$(dirname "$GO_INSTALL_DIR")
+if [[ "$INSTALL_PARENT" == "$HOME" || "$INSTALL_PARENT" == "$HOME"/* ]]; then
+    mkdir -p "$INSTALL_PARENT"
+    mv "$TMP/extract/go" "$GO_INSTALL_DIR"
+elif [ -d "$INSTALL_PARENT" ] && [ -w "$INSTALL_PARENT" ]; then
+    mv "$TMP/extract/go" "$GO_INSTALL_DIR"
+else
+    sudo mkdir -p "$INSTALL_PARENT"
+    sudo mv "$TMP/extract/go" "$GO_INSTALL_DIR"
+fi
 
 # Persist PATH in shell configs
 GO_PATH_LINE="export PATH=\$PATH:${GO_INSTALL_DIR}/bin"
@@ -92,9 +123,9 @@ for RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
     fi
 done
 
-export PATH=$PATH:${GO_INSTALL_DIR}/bin
+export PATH="$PATH:${GO_INSTALL_DIR}/bin"
 
 echo ""
 echo "✅ Go installed!"
-echo "   $(go version)"
+echo "   $("$GO_INSTALL_DIR/bin/go" version)"
 echo "💡 Reload your shell or run: source ~/.zshrc"

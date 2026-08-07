@@ -1,6 +1,6 @@
 # ubuntu-post-install
 
-Automated, idempotent shell scripts to provision a fresh Ubuntu installation with a developer's preferred toolchain — runtimes, editors, CLI tools, AI tooling, and OS hardening — through a single interactive installer.
+Automated shell scripts to provision a fresh Ubuntu installation with a developer's preferred toolchain — runtimes, editors, CLI tools, AI tooling, and OS hardening — through a single interactive installer.
 
 [![Lint](https://github.com/ashtanko/ubuntu-post-install/actions/workflows/lint.yml/badge.svg)](https://github.com/ashtanko/ubuntu-post-install/actions/workflows/lint.yml)
 [![Docker tests](https://github.com/ashtanko/ubuntu-post-install/actions/workflows/docker-tests.yml/badge.svg)](https://github.com/ashtanko/ubuntu-post-install/actions/workflows/docker-tests.yml)
@@ -8,17 +8,18 @@ Automated, idempotent shell scripts to provision a fresh Ubuntu installation wit
 ## Highlights
 
 - **Interactive menu installer** — pick categories and individual scripts; nothing runs without your say-so.
-- **Idempotent** — every script detects already-installed tools and exits early; safe to re-run.
-- **`.env`-driven** — one config file, ~30 knobs, sensible defaults, no required values.
+- **Re-run tested** — runnable container-compatible scripts execute twice and must preserve configured state snapshots.
+- **Configurable** — inherited environment variables override repo `.env`, which overrides `~/.env-ubuntu-post-install`.
 - **Resumable** — completed steps are tracked under `~/.cache/ubuntu-setup/`; full timestamped log at `~/ubuntu-setup.log`.
-- **Tested** — Docker harness and GitHub Actions matrix cover Ubuntu 22.04, 24.04, 25.04, and 26.04 in both smoke and idempotency stages.
+- **Tested** — Docker smoke and idempotency jobs cover Ubuntu 22.04, 24.04, and 26.04 where scripts are container-compatible.
 
 ## Requirements
 
-- Ubuntu 22.04, 24.04, 25.04, or 26.04 (other Debian-derivatives may work but are not tested)
+- Ubuntu 22.04, 24.04, or 26.04 (other Debian derivatives may work but are not tested)
 - `bash` (every script auto-re-execs under bash if invoked via `sh`)
 - `sudo` privileges (you'll be prompted as needed)
 - Network access for package downloads
+- `amd64` for Google Chrome and Warp; their scripts reject other architectures before changing apt state
 
 ## Quick install
 
@@ -50,7 +51,7 @@ $EDITOR .env              # set GIT_NAME, GIT_EMAIL, etc.
 bash setup.sh
 ```
 
-The installer walks you through eight categories. For each one you can select:
+The installer walks you through nine categories. For each one you can select:
 
 | Input | Effect |
 |---|---|
@@ -86,11 +87,12 @@ Browse [docs/SCRIPTS.md](docs/SCRIPTS.md) for the complete inventory. Categories
 | [ide/](ide/) | Editors: Zed, Neovim, JetBrains Toolbox, VS Code extensions |
 | [ai/](ai/) | LLM tooling: Ollama, llama.cpp, Gemini CLI, Antigravity, opencode, prompt-runner |
 | [software/](software/) | Virtualization: VirtualBox, GNOME Boxes/virt-manager, VMware prereqs |
+| [vpn/](vpn/) | VPN clients |
 | [mobile/](mobile/) | Manual mobile-dev utilities (not wired into setup.sh) |
 
 ## Configuration
 
-All scripts source `.env` automatically — every variable is optional. The most-used knobs:
+Scripts load configuration through `lib/config.bash`; every variable is optional. Inherited environment variables have highest precedence, followed by repo `.env`, then `~/.env-ubuntu-post-install`. The most-used knobs:
 
 | Variable | Purpose |
 |---|---|
@@ -115,27 +117,27 @@ rm -rf ~/.cache/ubuntu-setup/                # reset everything
 
 ## Testing
 
-The repo ships with a Docker-based test harness — no host pollution, deterministic across Ubuntu versions.
+The repo ships with an isolated Docker harness. It compares deterministic package/file metadata, while network-backed installer availability can still vary upstream.
 
 ```bash
 bash tests/run-in-docker.sh                          # default: Ubuntu 24.04, smoke
 bash tests/run-in-docker.sh 22.04 idempotency        # idempotency stage on 22.04
 bash tests/run-in-docker.sh 24.04 smoke dev/node.sh  # single script
-bash tests/lint.sh                                   # shellcheck on every .sh
+bash tests/lint.sh                                   # shellcheck on every .sh/.bash file
 ```
 
 Or via the [Makefile](Makefile) (`make help` for the full list):
 
 ```bash
-make check                      # lint + manifest coverage
+make check                      # lint + manifest validation + local regressions
 make smoke UBUNTU=22.04         # smoke stage on a specific Ubuntu version
 make smoke SCRIPT=dev/node.sh   # scope to one script
 make idempotency-all            # idempotency across every supported version
-make release-dry-run            # lint + build a release tarball locally
+make release-dry-run            # full checks + build and verify release artifacts
 make tag VERSION=1.0.0          # cut and push a release tag
 ```
 
-CI runs both [`lint.yml`](.github/workflows/lint.yml) (shellcheck + manifest coverage) and [`docker-tests.yml`](.github/workflows/docker-tests.yml) (matrix across all supported Ubuntu versions × smoke/idempotency) on every push and pull request.
+[`lint.yml`](.github/workflows/lint.yml) runs the complete local check gate on every push and pull request. [`docker-tests.yml`](.github/workflows/docker-tests.yml) runs the supported-version smoke/idempotency matrix on pushes to `main`, pull requests, and manual dispatches.
 
 Full testing guide: [docs/TESTING.md](docs/TESTING.md).
 
@@ -146,7 +148,7 @@ Full testing guide: [docs/TESTING.md](docs/TESTING.md).
 | [docs/SETUP.md](docs/SETUP.md) | How `setup.sh` orchestrates runs: menu input, marker files, log layout, resume / reset |
 | [docs/PUSH.md](docs/PUSH.md) | How to cut and publish a new release (tag conventions, workflow, verification) |
 | [docs/SCRIPTS.md](docs/SCRIPTS.md) | Full inventory of every script with one-line purpose |
-| [docs/CONFIG.md](docs/CONFIG.md) | Every `.env` variable, its default, and which scripts read it |
+| [docs/CONFIG.md](docs/CONFIG.md) | Every configuration variable, its default, and which scripts read it |
 | [docs/TESTING.md](docs/TESTING.md) | Docker test harness, manifest format, CI workflows |
 | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | Adding a new script: shape, manifest row, local checks, CI gates |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common failures and recovery steps |
@@ -157,8 +159,8 @@ Full testing guide: [docs/TESTING.md](docs/TESTING.md).
 Every script follows the same shape:
 
 - `#!/bin/bash` + `set -euo pipefail` + bash re-exec shim
-- `.env` auto-sourced from the repo root before any work
-- Idempotency check (`command -v`, marker, file existence) — early-exit if already done
+- configuration loaded through `lib/config.bash` without automatically exporting secrets
+- Repeat-safe guards (`command -v`, marker, file existence) where the operation supports them
 - Temp files cleaned via `trap 'rm -f "$TMP"' EXIT`
 - Shell config additions written to **both** `~/.zshrc` and `~/.bashrc`, guarded by `grep -q`
 - Emoji legend: 🚀 start · 📦 installing · ✅ success · ❌ error · ⚠️ warning · 💡 tip · 🔧 configuring · 🔍 detecting
@@ -170,7 +172,7 @@ See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for the full guide. TL;DR:
 1. Follow the script conventions above.
 2. Add a row for any new script to [tests/manifest.sh](tests/manifest.sh) — it's the single source of truth for compatibility, env vars, and verification commands.
 3. Optional: add a multi-line verification under `tests/verify/<category>_<name>.sh`.
-4. Run `bash tests/lint.sh` and `bash tests/check-manifest-coverage.sh` before opening a PR.
+4. Run `make check` before opening a PR.
 
 CI will reject PRs that add scripts without manifest entries.
 

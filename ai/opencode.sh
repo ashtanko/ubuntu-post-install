@@ -7,11 +7,17 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[ -f "$REPO_ROOT/.env" ] && { set -a; . "$REPO_ROOT/.env"; set +a; }
+CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
+# shellcheck source=lib/config.bash
+source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
+load_config "$REPO_ROOT"
 
 echo "🚀 Installing opencode..."
 
-OPENCODE_BIN="${OPENCODE_INSTALL_DIR:-$HOME/.opencode/bin}/opencode"
+OPENCODE_INSTALL_DIR="${OPENCODE_INSTALL_DIR:-$HOME/.opencode}"
+# The upstream installer reads its destination from the environment.
+export OPENCODE_INSTALL_DIR
+OPENCODE_BIN="$OPENCODE_INSTALL_DIR/bin/opencode"
 
 if [ -x "$OPENCODE_BIN" ] && "$OPENCODE_BIN" --version 2>/dev/null | grep -qi "opencode"; then
     echo "✅ opencode already installed ($("$OPENCODE_BIN" --version 2>/dev/null))"

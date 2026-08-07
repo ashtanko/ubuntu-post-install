@@ -6,7 +6,8 @@ if [ -z "${BASH_VERSION:-}" ]; then
     exec /bin/bash "$0" "$@"
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 
 # Replaced at release time by .github/workflows/release.yml
 VERSION="dev"
@@ -18,8 +19,11 @@ case "${1:-}" in
         ;;
 esac
 
-# Load user config — must happen before LOG_FILE is set so SETUP_LOG_FILE is available
-[[ -f "$SCRIPT_DIR/.env" ]] && { set -a; source "$SCRIPT_DIR/.env"; set +a; }
+# Load user config before LOG_FILE is set so SETUP_LOG_FILE is available.
+CONFIG_HELPER="$SCRIPT_DIR/lib/config.bash"
+# shellcheck source=lib/config.bash
+source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
+load_config "$SCRIPT_DIR"
 
 LOG_FILE="${SETUP_LOG_FILE:-$HOME/ubuntu-setup.log}"
 MARKER_DIR="$HOME/.cache/ubuntu-setup"
@@ -93,7 +97,7 @@ declare -a APPS_ITEMS=(
 declare -a DEV_ITEMS=(
     "Java (OpenJDK 8/11/17/21/25)|dev/java.sh"
     "Docker Engine + Docker Desktop|dev/docker.sh"
-    "Flutter SDK + Android|dev/flutter.sh"
+    "Flutter SDK + Linux desktop|dev/flutter.sh"
     "Node.js (via NVM)|dev/node.sh"
     "Python 3 + pyenv + poetry|dev/python.sh"
     "Rust (via rustup)|dev/rust.sh"
@@ -233,9 +237,9 @@ header "Setup Summary"
 OK=0; FAILED=0; SKIPPED=0
 for label in "${!RESULTS[@]}"; do
     case "${RESULTS[$label]}" in
-        ok)      success "$label"; ((OK++)) ;;
-        failed)  fail    "$label"; ((FAILED++)) ;;
-        skipped) warn    "$label (skipped)"; ((SKIPPED++)) ;;
+        ok)      success "$label"; ((++OK)) ;;
+        failed)  fail    "$label"; ((++FAILED)) ;;
+        skipped) warn    "$label (skipped)"; ((++SKIPPED)) ;;
     esac
 done
 

@@ -7,7 +7,10 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[[ -f "$REPO_ROOT/.env" ]] && { set -a; source "$REPO_ROOT/.env"; set +a; }
+CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
+# shellcheck source=lib/config.bash
+source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
+load_config "$REPO_ROOT"
 
 echo "🚀 Setting up Python development environment..."
 
@@ -25,9 +28,12 @@ echo "✅ $(python3 --version)"
 echo "✅ pip $(pip3 --version | awk '{print $2}')"
 
 # 2. Install pyenv
+# Deliberately no `git pull` on re-run: a fetch rewrites .git/FETCH_HEAD and
+# .git/ORIG_HEAD every time, so the script would never be idempotent, and it
+# would silently move a pinned pyenv out from under the user.
 if [ -d "$PYENV_DIR" ]; then
-    echo "✅ pyenv already installed — updating..."
-    git -C "$PYENV_DIR" pull --ff-only
+    echo "✅ pyenv already installed"
+    echo "💡 Update it with: git -C \"$PYENV_DIR\" pull --ff-only"
 else
     echo "📥 Installing pyenv..."
     git clone https://github.com/pyenv/pyenv.git "$PYENV_DIR"

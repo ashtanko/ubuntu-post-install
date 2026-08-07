@@ -7,7 +7,13 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[[ -f "$REPO_ROOT/.env" ]] && { set -a; source "$REPO_ROOT/.env"; set +a; }
+CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
+# shellcheck source=lib/config.bash
+source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
+load_config "$REPO_ROOT"
+GITHUB_HELPER="$REPO_ROOT/lib/github.bash"
+# shellcheck source=lib/github.bash
+source "$GITHUB_HELPER" || { echo "❌ Missing github helper: $GITHUB_HELPER" >&2; exit 1; }
 
 echo "🚀 Installing developer Nerd Fonts..."
 
@@ -20,18 +26,6 @@ fi
 
 FONTS_DIR="$HOME/.local/share/fonts"
 mkdir -p "$FONTS_DIR"
-
-# Resolve the newest release tag of a GitHub repo without calling api.github.com —
-# unauthenticated API calls are rate-limited per IP and start returning 403 in CI.
-# Follows the /releases/latest redirect and reads the tag back out of the URL.
-latest_github_tag() {
-    local repo="$1" url
-    url=$(curl -fsSLI --retry 3 --retry-all-errors -o /dev/null -w '%{url_effective}' "https://github.com/${repo}/releases/latest")
-    case "$url" in
-        */releases/tag/*) printf '%s\n' "${url##*/releases/tag/}" ;;
-        *) echo "❌ Could not resolve latest release for $repo" >&2; return 1 ;;
-    esac
-}
 
 # Fetch latest nerd-fonts release tag once
 NERD_VERSION=$(latest_github_tag ryanoasis/nerd-fonts)
@@ -48,11 +42,24 @@ install_nerd_font() {
     fi
 
     echo "📥 Downloading $name Nerd Font..."
-    TMP=$(mktemp -d)
-    trap 'rm -rf "$TMP"' RETURN
+    (
+        local tmp
+        local -a font_files
+        tmp=$(mktemp -d)
+        trap 'rm -rf "$tmp"' EXIT
 
-    wget -q --show-progress -O "$TMP/${name}.tar.xz" "$url"
-    tar -xJf "$TMP/${name}.tar.xz" -C "$FONTS_DIR" --wildcards '*.ttf' '*.otf' 2>/dev/null || true
+        wget -q --show-progress -O "$tmp/${name}.tar.xz" "$url"
+        mkdir -p "$tmp/extracted"
+        tar -xJf "$tmp/${name}.tar.xz" -C "$tmp/extracted" \
+            --wildcards --no-anchored '*.[ot]tf'
+        mapfile -d '' -t font_files < <(find "$tmp/extracted" -type f \
+            \( -iname '*.ttf' -o -iname '*.otf' \) -print0)
+        if [ "${#font_files[@]}" -eq 0 ]; then
+            echo "❌ $name archive contained no TTF or OTF font files"
+            exit 1
+        fi
+        install -m 644 "${font_files[@]}" "$FONTS_DIR/"
+    )
     echo "✅ $name installed"
 }
 

@@ -7,28 +7,27 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[[ -f "$REPO_ROOT/.env" ]] && { set -a; source "$REPO_ROOT/.env"; set +a; }
+CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
+# shellcheck source=lib/config.bash
+source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
+load_config "$REPO_ROOT"
 
 FLUTTER_DEST="${FLUTTER_DIR:-$HOME/development}"
 FLUTTER_BIN="$FLUTTER_DEST/flutter/bin"
 
-echo "🚀 Setting up Flutter for Ubuntu..."
+echo "🚀 Setting up Flutter SDK and Linux desktop dependencies for Ubuntu..."
 
-# 1. Enable 32-bit architecture (required for Android tools)
-echo "🌐 Enabling i386 architecture..."
-sudo dpkg --add-architecture i386
-
-# 2. Install system dependencies
-echo "📦 Installing system dependencies..."
+# 1. Install Flutter SDK and Linux desktop dependencies. Android Studio, the
+# Android SDK, an emulator, and device tooling are intentionally out of scope.
+echo "📦 Installing Flutter/Linux desktop dependencies..."
 sudo apt update -y
 sudo apt install -y \
     curl git unzip xz-utils zip \
     libglu1-mesa libpulse0 libgl1 \
-    libc6:i386 libncurses6:i386 libstdc++6:i386 lib32z1 \
     clang cmake ninja-build pkg-config \
     libgtk-3-dev liblzma-dev libstdc++-12-dev mesa-utils
 
-# 3. Clone Flutter SDK
+# 2. Clone Flutter SDK
 mkdir -p "$FLUTTER_DEST"
 if [ -d "$FLUTTER_DEST/flutter" ]; then
     echo "✅ Flutter SDK already cloned — updating..."
@@ -38,10 +37,10 @@ else
     git clone https://github.com/flutter/flutter.git -b stable "$FLUTTER_DEST/flutter"
 fi
 
-# 4. Add Flutter to PATH for this session
+# 3. Add Flutter to PATH for this session
 export PATH="$PATH:$FLUTTER_BIN"
 
-# 5. Persist PATH in shell configs (guard with the full destination path)
+# 4. Persist PATH in shell configs (guard with the full destination path)
 PATH_SNIPPET="export PATH=\"\$PATH:$FLUTTER_BIN\""
 for RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
     if [ -f "$RC" ] && ! grep -qF "$FLUTTER_BIN" "$RC"; then
@@ -54,18 +53,28 @@ for RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
     fi
 done
 
-# 6. Accept Android licenses
-echo "📋 Accepting Android licenses (requires Java)..."
-if command -v java &>/dev/null; then
-    flutter doctor --android-licenses || true
+# 5. Accept Android licenses only when the separately installed Android SDK
+# tooling and Java are both available. A failure is reported, never hidden.
+ANDROID_STATUS="not configured (Android SDK setup is outside this installer)"
+if command -v java &>/dev/null && command -v sdkmanager &>/dev/null; then
+    echo "📋 Accepting Android licenses..."
+    if flutter doctor --android-licenses; then
+        ANDROID_STATUS="licenses accepted"
+    else
+        ANDROID_STATUS="incomplete (Android license acceptance failed)"
+        echo "⚠️  Android setup is incomplete: license acceptance failed."
+    fi
 else
-    echo "⚠️  Java not found — run dev/java.sh first, then re-run: flutter doctor --android-licenses"
+    echo "ℹ️  Android SDK/license setup skipped; install Java and Android SDK tools separately."
 fi
 
-# 7. Run flutter doctor
+# 6. Run flutter doctor. It may report optional platforms that are not installed.
 echo "🏥 Running flutter doctor..."
-flutter doctor
+if ! flutter doctor; then
+    echo "⚠️  Flutter doctor reported incomplete optional tooling; review its output above."
+fi
 
 echo ""
-echo "✅ Flutter setup complete!"
+echo "✅ Flutter SDK and Linux desktop dependencies setup complete!"
+echo "ℹ️  Android status: $ANDROID_STATUS"
 echo "💡 Reload your shell or run: source ~/.zshrc"

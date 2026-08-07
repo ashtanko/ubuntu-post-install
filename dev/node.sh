@@ -7,23 +7,19 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[[ -f "$REPO_ROOT/.env" ]] && { set -a; source "$REPO_ROOT/.env"; set +a; }
+CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
+# shellcheck source=lib/config.bash
+source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
+load_config "$REPO_ROOT"
+GITHUB_HELPER="$REPO_ROOT/lib/github.bash"
+# shellcheck source=lib/github.bash
+source "$GITHUB_HELPER" || { echo "❌ Missing github helper: $GITHUB_HELPER" >&2; exit 1; }
 
 echo "🚀 Installing Node.js via NVM..."
 
 NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
-
-# Resolve the newest release tag of a GitHub repo without calling api.github.com —
-# unauthenticated API calls are rate-limited per IP and start returning 403 in CI.
-# Follows the /releases/latest redirect and reads the tag back out of the URL.
-latest_github_tag() {
-    local repo="$1" url
-    url=$(curl -fsSLI --retry 3 --retry-all-errors -o /dev/null -w '%{url_effective}' "https://github.com/${repo}/releases/latest")
-    case "$url" in
-        */releases/tag/*) printf '%s\n' "${url##*/releases/tag/}" ;;
-        *) echo "❌ Could not resolve latest release for $repo" >&2; return 1 ;;
-    esac
-}
+# The upstream installer reads NVM_DIR from its child-process environment.
+export NVM_DIR
 
 # Install NVM if not present
 if [ -d "$NVM_DIR" ]; then

@@ -7,9 +7,18 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[[ -f "$REPO_ROOT/.env" ]] && { set -a; source "$REPO_ROOT/.env"; set +a; }
+CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
+# shellcheck source=lib/config.bash
+source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
+load_config "$REPO_ROOT"
 
 echo "🚀 Installing Warp terminal..."
+
+ARCH=$(dpkg --print-architecture 2>/dev/null || uname -m)
+if [ "$ARCH" != "amd64" ] && [ "$ARCH" != "x86_64" ]; then
+    echo "❌ This Warp repository configuration supports amd64 only (detected: $ARCH)."
+    exit 1
+fi
 
 if command -v warp-terminal &>/dev/null; then
     echo "✅ Warp terminal already installed"

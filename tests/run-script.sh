@@ -11,12 +11,16 @@ SCRIPT_PATH="${MANIFEST_SCRIPT:?MANIFEST_SCRIPT required}"
 ENV_PAIRS="${MANIFEST_ENV:-}"
 VERIFY_CMD="${MANIFEST_VERIFY:-}"
 MODE="${MANIFEST_MODE:-smoke}"
+STATE_PATHS="${MANIFEST_STATE_PATHS:-}"
 
 # Stage repo into a writable location (container mount may be read-only)
 WORK="$HOME/work"
 rm -rf "$WORK"
 cp -r /home/tester/repo "$WORK"
 cd "$WORK" || { echo "❌ cd $WORK failed"; exit 1; }
+
+# shellcheck source=tests/idempotency-lib.bash
+source "$WORK/tests/idempotency-lib.bash"
 
 # Drop in CI .env (overrides anything in tests/fixtures)
 cp tests/fixtures/test.env .env
@@ -26,8 +30,13 @@ declare -a ENV_ARGS=()
 if [ -n "$ENV_PAIRS" ]; then
     IFS=',' read -ra pairs <<<"$ENV_PAIRS"
     for kv in "${pairs[@]}"; do
-        # Allow $HOME-style expansion in manifest values
-        kv_expanded=$(eval echo "$kv")
+        [[ "$kv" == *=* ]] || { echo "❌ invalid manifest env entry: $kv"; exit 2; }
+        key="${kv%%=*}"
+        value="${kv#*=}"
+        [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]] || { echo "❌ invalid manifest env name: $key"; exit 2; }
+        value="${value//\$HOME/$HOME}"
+        value="${value//\$\{HOME\}/$HOME}"
+        kv_expanded="$key=$value"
         ENV_ARGS+=("$kv_expanded")
     done
 fi
@@ -60,22 +69,6 @@ run_verify() {
     fi
 }
 
-snapshot() {
-    local out="$1"
-    {
-        echo "## dpkg"
-        dpkg-query -W -f='${Package} ${Version}\n' 2>/dev/null | sort
-        echo "## bashrc-bytes"
-        wc -c "$HOME/.bashrc" 2>/dev/null || true
-        echo "## zshrc-bytes"
-        wc -c "$HOME/.zshrc" 2>/dev/null || true
-        echo "## profile-bytes"
-        wc -c "$HOME/.profile" 2>/dev/null || true
-        echo "## local-bin"
-        find "$HOME/.local/bin" -mindepth 1 -maxdepth 1 -printf '%f\n' 2>/dev/null | sort
-    } > "$out"
-}
-
 LOG1=/tmp/run1.log
 LOG2=/tmp/run2.log
 SNAP1=/tmp/snap1.txt
@@ -97,14 +90,25 @@ if [ "$MODE" = "smoke" ]; then
 fi
 
 # idempotency mode
-snapshot "$SNAP1"
+if ! snapshot_state "$SNAP1"; then
+    echo "❌ FIRST STATE SNAPSHOT FAILED: $SCRIPT_PATH"
+    exit 1
+fi
 
 if ! run_script "run-2" "$LOG2"; then
     echo "❌ SECOND RUN FAILED (idempotency): $SCRIPT_PATH"
     exit 1
 fi
 
-snapshot "$SNAP2"
+if ! run_verify; then
+    echo "❌ VERIFY AFTER SECOND RUN FAILED: $SCRIPT_PATH"
+    exit 1
+fi
+
+if ! snapshot_state "$SNAP2"; then
+    echo "❌ SECOND STATE SNAPSHOT FAILED: $SCRIPT_PATH"
+    exit 1
+fi
 
 if ! diff -u "$SNAP1" "$SNAP2"; then
     echo "❌ STATE CHANGED ON RE-RUN: $SCRIPT_PATH"

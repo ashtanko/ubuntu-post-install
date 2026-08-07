@@ -7,7 +7,10 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[[ -f "$REPO_ROOT/.env" ]] && { set -a; source "$REPO_ROOT/.env"; set +a; }
+CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
+# shellcheck source=lib/config.bash
+source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
+load_config "$REPO_ROOT"
 
 echo "🚀 Configuring locale and timezone..."
 
@@ -26,7 +29,7 @@ else
 fi
 
 if [ -z "$DESIRED_TZ" ]; then
-    echo "🔍 No TZ set in .env — auto-detecting from public IP..."
+    echo "🔍 No TZ configured — auto-detecting from public IP..."
     DESIRED_TZ=$(curl -fsSL --max-time 5 https://ipapi.co/timezone 2>/dev/null || echo "")
 fi
 

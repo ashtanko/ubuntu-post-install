@@ -25,6 +25,24 @@ require curl
 require tar
 require sha256sum
 
+is_semver() {
+    local version="${1:-}"
+    local without_build prerelease identifier
+    local -a identifiers=()
+    local pattern='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
+
+    [[ "$version" =~ $pattern ]] || return 1
+    without_build="${version%%+*}"
+    [[ "$without_build" == *-* ]] || return 0
+    prerelease="${without_build#*-}"
+    IFS='.' read -r -a identifiers <<< "$prerelease"
+    for identifier in "${identifiers[@]}"; do
+        if [[ "$identifier" =~ ^[0-9]+$ ]] && [[ "$identifier" != 0 && "$identifier" == 0* ]]; then
+            return 1
+        fi
+    done
+}
+
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
@@ -47,9 +65,14 @@ fi
 # Accept v1.2.3 or 1.2.3
 [[ "$TAG" != v* ]] && TAG="v$TAG"
 SEMVER="${TAG#v}"
+is_semver "$SEMVER" || {
+    fail "invalid semantic version: $TAG"
+    exit 2
+}
 
 TARBALL="ubuntu-post-install-${SEMVER}.tar.gz"
-BASE_URL="https://github.com/${REPO}/releases/download/${TAG}"
+BASE_URL="${RELEASE_BASE_URL:-https://github.com/${REPO}/releases/download/${TAG}}"
+BASE_URL="${BASE_URL%/}"
 
 info "Installing ubuntu-post-install ${TAG}"
 info "Source: ${BASE_URL}"
@@ -57,7 +80,13 @@ info "Source: ${BASE_URL}"
 curl -fsSL -o "$TMP/$TARBALL"   "$BASE_URL/$TARBALL"
 curl -fsSL -o "$TMP/SHA256SUMS" "$BASE_URL/SHA256SUMS"
 
-(cd "$TMP" && sha256sum -c --ignore-missing SHA256SUMS) >/dev/null
+mapfile -t TARBALL_CHECKSUMS < <(awk -v name="$TARBALL" '$2 == name { print $1 }' "$TMP/SHA256SUMS")
+if [ "${#TARBALL_CHECKSUMS[@]}" -ne 1 ] \
+    || [[ ! "${TARBALL_CHECKSUMS[0]}" =~ ^[0-9a-fA-F]{64}$ ]]; then
+    fail "SHA256SUMS must contain exactly one valid checksum for $TARBALL"
+    exit 1
+fi
+echo "${TARBALL_CHECKSUMS[0]}  $TMP/$TARBALL" | sha256sum --check --status
 success "Checksum verified"
 
 INSTALL_DIR="$PREFIX/$SEMVER"
@@ -80,6 +109,7 @@ ln -s "$INSTALL_DIR/setup.sh" "$LINK"
 
 success "Installed to $INSTALL_DIR"
 success "Symlink: $LINK -> $INSTALL_DIR/setup.sh"
+info "Configuration: ${UBUNTU_POST_INSTALL_CONFIG:-$HOME/.env-ubuntu-post-install}"
 
 case ":$PATH:" in
     *":$BIN_DIR:"*) ;;
@@ -89,7 +119,7 @@ esac
 cat <<EOF
 
   Next steps:
-    1. (optional) cp $INSTALL_DIR/.env.example ~/.env-ubuntu-post-install
+    1. (optional) cp $INSTALL_DIR/.env.example ${UBUNTU_POST_INSTALL_CONFIG:-$HOME/.env-ubuntu-post-install}
     2. ubuntu-post-install --version
     3. ubuntu-post-install            # launches the interactive menu
 

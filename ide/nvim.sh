@@ -7,13 +7,43 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[[ -f "$REPO_ROOT/.env" ]] && { set -a; source "$REPO_ROOT/.env"; set +a; }
+CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
+# shellcheck source=lib/config.bash
+source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
+load_config "$REPO_ROOT"
+GITHUB_HELPER="$REPO_ROOT/lib/github.bash"
+# shellcheck source=lib/github.bash
+source "$GITHUB_HELPER" || { echo "❌ Missing github helper: $GITHUB_HELPER" >&2; exit 1; }
 
 echo "🚀 Installing latest Neovim from official GitHub release..."
 
 INSTALL_DIR="${NVIM_INSTALL_DIR:-$HOME/.local/share/nvim-stable}"
 BIN_DIR="$HOME/.local/bin"
 NVIM_BIN="$BIN_DIR/nvim"
+
+HOME_CANON=$(realpath -m "$HOME")
+INSTALL_DIR=$(realpath -m "$INSTALL_DIR")
+case "$INSTALL_DIR" in
+    "$HOME_CANON"/*) ;;
+    *) echo "❌ NVIM_INSTALL_DIR must resolve beneath HOME"; exit 1 ;;
+esac
+INSTALL_RELATIVE=${INSTALL_DIR#"$HOME_CANON"/}
+INSTALL_BASENAME=${INSTALL_DIR##*/}
+if [[ "$INSTALL_RELATIVE" != */* ]] || [[ ! "$INSTALL_BASENAME" =~ ^nvim($|-) ]]; then
+    echo "❌ Unsafe NVIM_INSTALL_DIR: require at least two components beneath HOME and basename nvim or nvim-*"
+    exit 1
+fi
+case "$INSTALL_RELATIVE" in
+    .config/*|.ssh/*|.gnupg/*|.aws/*|.kube/*|.password-store/*|.local/bin/*)
+        echo "❌ Unsafe NVIM_INSTALL_DIR: protected user configuration, secret, and executable paths are not install targets"
+        exit 1
+        ;;
+esac
+if [[ -e "$INSTALL_DIR" || -L "$INSTALL_DIR" ]] \
+    && { [[ ! -x "$INSTALL_DIR/bin/nvim" ]] || ! "$INSTALL_DIR/bin/nvim" --version &>/dev/null; }; then
+    echo "❌ Refusing to replace $INSTALL_DIR because it is not a valid existing Neovim installation"
+    exit 1
+fi
 
 # Skip if a recent enough nvim is on PATH
 if command -v nvim &>/dev/null; then
@@ -23,21 +53,12 @@ if command -v nvim &>/dev/null; then
     exit 0
 fi
 
-# Resolve the newest release tag of a GitHub repo without calling api.github.com —
-# unauthenticated API calls are rate-limited per IP and start returning 403 in CI.
-# Follows the /releases/latest redirect and reads the tag back out of the URL.
-latest_github_tag() {
-    local repo="$1" url
-    url=$(curl -fsSLI --retry 3 --retry-all-errors -o /dev/null -w '%{url_effective}' "https://github.com/${repo}/releases/latest")
-    case "$url" in
-        */releases/tag/*) printf '%s\n' "${url##*/releases/tag/}" ;;
-        *) echo "❌ Could not resolve latest release for $repo" >&2; return 1 ;;
-    esac
-}
-
 # Resolve latest release tag
 echo "🔍 Resolving latest Neovim release..."
-NVIM_VERSION=$(latest_github_tag neovim/neovim)
+NVIM_VERSION="${NVIM_VERSION:-}"
+if [ -z "$NVIM_VERSION" ]; then
+    NVIM_VERSION=$(latest_github_tag neovim/neovim)
+fi
 echo "📥 Neovim $NVIM_VERSION"
 
 # Pick correct asset for arch (Neovim ships nvim-linux-x86_64 / nvim-linux-arm64)
@@ -48,16 +69,78 @@ case "$ARCH_RAW" in
     *) echo "❌ Unsupported architecture: $ARCH_RAW"; exit 1 ;;
 esac
 
-URL="https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/${ASSET}"
+URL="${NVIM_ARCHIVE_URL:-https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/${ASSET}}"
 
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
+STAGE=""
+BACKUP=""
+cleanup() {
+    rm -rf "$TMP"
+    [ -z "$STAGE" ] || rm -rf "$STAGE"
+    if [ -n "$BACKUP" ] && [ -e "$BACKUP" ] && [ ! -e "$INSTALL_DIR" ]; then
+        mv "$BACKUP" "$INSTALL_DIR" || echo "⚠️  Previous install retained at $BACKUP" >&2
+    fi
+}
+trap cleanup EXIT
 wget -q --show-progress -O "$TMP/nvim.tar.gz" "$URL"
 
-# Install into stable dir, link binary into ~/.local/bin
-rm -rf "$INSTALL_DIR"
-mkdir -p "$INSTALL_DIR"
-tar -xzf "$TMP/nvim.tar.gz" -C "$INSTALL_DIR" --strip-components=1
+# A custom mirror is untrusted, so it must always declare its digest.
+EXPECTED_SHA="${NVIM_ARCHIVE_SHA256:-}"
+if [ -z "$EXPECTED_SHA" ] && [ -n "${NVIM_ARCHIVE_URL:-}" ]; then
+    echo "❌ A custom Neovim archive requires NVIM_ARCHIVE_SHA256"
+    exit 1
+fi
+
+# Upstream's checksum publishing has moved around: v0.10.x shipped a per-asset
+# <asset>.sha256sum, v0.11.0 shipped an aggregate shasum.txt, and v0.11.4 and
+# later publish neither. Try both locations and verify whenever upstream gives
+# us something to verify against.
+if [ -z "$EXPECTED_SHA" ]; then
+    RELEASE_BASE="${URL%/*}"
+    if wget -q -O "$TMP/asset.sha256sum" "${URL}.sha256sum"; then
+        EXPECTED_SHA=$(awk 'NR==1 {print $1}' "$TMP/asset.sha256sum")
+    elif wget -q -O "$TMP/shasum.txt" "${RELEASE_BASE}/shasum.txt"; then
+        EXPECTED_SHA=$(awk -v want="$ASSET" '$2 == want || $2 == "*" want {print $1; exit}' "$TMP/shasum.txt")
+    fi
+fi
+
+if [ -n "$EXPECTED_SHA" ]; then
+    echo "$EXPECTED_SHA  $TMP/nvim.tar.gz" | sha256sum --check --quiet
+    echo "✅ Checksum verified"
+else
+    echo "⚠️  Neovim $NVIM_VERSION publishes no checksum asset — cannot verify the download"
+    echo "   Fetched over TLS from github.com; set NVIM_ARCHIVE_SHA256 to enforce a digest."
+fi
+
+# Build and validate away from the destination, then replace it atomically.
+INSTALL_PARENT=$(dirname "$INSTALL_DIR")
+mkdir -p "$INSTALL_PARENT"
+STAGE=$(mktemp -d "$INSTALL_PARENT/.nvim-stage.XXXXXX")
+tar -xzf "$TMP/nvim.tar.gz" -C "$STAGE" --strip-components=1
+if [ ! -x "$STAGE/bin/nvim" ] || ! "$STAGE/bin/nvim" --version &>/dev/null; then
+    echo "❌ Downloaded archive does not contain a working Neovim binary"
+    exit 1
+fi
+
+if [ -e "$INSTALL_DIR" ]; then
+    BACKUP=$(mktemp -d "$INSTALL_PARENT/.nvim-backup.XXXXXX")
+    rmdir "$BACKUP"
+    mv "$INSTALL_DIR" "$BACKUP"
+fi
+if ! mv "$STAGE" "$INSTALL_DIR"; then
+    if [ -n "$BACKUP" ] && mv "$BACKUP" "$INSTALL_DIR"; then
+        BACKUP=""
+    fi
+    echo "❌ Could not replace Neovim installation"
+    exit 1
+fi
+STAGE=""
+if [ -n "$BACKUP" ]; then
+    rm -rf "$BACKUP"
+    BACKUP=""
+fi
+
+# Link the validated install into ~/.local/bin.
 mkdir -p "$BIN_DIR"
 ln -sf "$INSTALL_DIR/bin/nvim" "$NVIM_BIN"
 

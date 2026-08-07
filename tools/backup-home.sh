@@ -7,7 +7,10 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[[ -f "$REPO_ROOT/.env" ]] && { set -a; source "$REPO_ROOT/.env"; set +a; }
+CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
+# shellcheck source=lib/config.bash
+source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
+load_config "$REPO_ROOT"
 
 # Manual utility: pack the user's critical secrets/configs into a single
 # tarball, optionally GPG-encrypted. Run this BEFORE distro upgrades, hardware
@@ -20,6 +23,27 @@ RECIPIENT="${BACKUP_GPG_RECIPIENT:-${GIT_EMAIL:-}}"
 mkdir -p "$DEST_DIR"
 TS=$(date +%Y%m%d-%H%M%S)
 ARCHIVE="$DEST_DIR/home-backup-$TS.tar.gz"
+PLAIN_TMP=""
+ENCRYPTED_TMP=""
+
+cleanup() {
+    if [ -n "$PLAIN_TMP" ] && [ -f "$PLAIN_TMP" ]; then
+        shred -u "$PLAIN_TMP" 2>/dev/null || rm -f "$PLAIN_TMP"
+    fi
+    [ -z "$ENCRYPTED_TMP" ] || rm -f "$ENCRYPTED_TMP"
+}
+trap cleanup EXIT
+
+if [[ "$ENCRYPT" == "yes" ]]; then
+    if [ -z "$RECIPIENT" ]; then
+        echo "❌ BACKUP_ENCRYPT=yes but no recipient (BACKUP_GPG_RECIPIENT or GIT_EMAIL)"
+        exit 1
+    fi
+    if ! command -v gpg &>/dev/null; then
+        echo "❌ gpg not installed"
+        exit 1
+    fi
+fi
 
 # Critical paths — only include what actually exists, skip what's missing
 CANDIDATES=(
@@ -52,26 +76,27 @@ echo ""
 
 # Use --ignore-failed-read so a single unreadable file (e.g. a stale socket)
 # doesn't abort the whole archive
+PLAIN_TMP=$(mktemp "$DEST_DIR/.home-backup-${TS}.XXXXXX.tar.gz")
 tar --ignore-failed-read \
     --exclude='*/Cache' --exclude='*/cache' --exclude='*/Code Cache' \
     --exclude='*/CachedData' --exclude='*/GPUCache' \
-    -C "$HOME" -czf "$ARCHIVE" "${INCLUDE[@]}"
+    -C "$HOME" -czf "$PLAIN_TMP" "${INCLUDE[@]}"
 
-chmod 600 "$ARCHIVE"
+chmod 600 "$PLAIN_TMP"
 
 if [[ "$ENCRYPT" == "yes" ]]; then
-    if [ -z "$RECIPIENT" ]; then
-        echo "❌ BACKUP_ENCRYPT=yes but no recipient (BACKUP_GPG_RECIPIENT or GIT_EMAIL)"
-        exit 1
-    fi
-    if ! command -v gpg &>/dev/null; then
-        echo "❌ gpg not installed"
-        exit 1
-    fi
     echo "🔒 Encrypting to $RECIPIENT..."
-    gpg --yes --batch --encrypt --recipient "$RECIPIENT" --output "$ARCHIVE.gpg" "$ARCHIVE"
-    shred -u "$ARCHIVE" 2>/dev/null || rm -f "$ARCHIVE"
+    ENCRYPTED_TMP=$(mktemp "$DEST_DIR/.home-backup-${TS}.XXXXXX.tar.gz.gpg")
+    gpg --yes --batch --encrypt --recipient "$RECIPIENT" --output "$ENCRYPTED_TMP" "$PLAIN_TMP"
+    chmod 600 "$ENCRYPTED_TMP"
+    mv "$ENCRYPTED_TMP" "$ARCHIVE.gpg"
+    ENCRYPTED_TMP=""
+    shred -u "$PLAIN_TMP" 2>/dev/null || rm -f "$PLAIN_TMP"
+    PLAIN_TMP=""
     ARCHIVE="$ARCHIVE.gpg"
+else
+    mv "$PLAIN_TMP" "$ARCHIVE"
+    PLAIN_TMP=""
 fi
 
 SIZE=$(du -h "$ARCHIVE" | awk '{print $1}')
