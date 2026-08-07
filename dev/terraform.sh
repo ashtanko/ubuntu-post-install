@@ -35,7 +35,7 @@ else
     sudo apt-get install -y ca-certificates curl gnupg lsb-release
 
     sudo install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://apt.releases.hashicorp.com/gpg \
+    curl -fsSL --retry 3 --retry-all-errors https://apt.releases.hashicorp.com/gpg \
         | sudo gpg --dearmor --yes -o /etc/apt/keyrings/hashicorp.gpg
     sudo chmod a+r /etc/apt/keyrings/hashicorp.gpg
 
@@ -88,7 +88,7 @@ else
         sudo apt-get install -y unzip
     fi
     echo "📦 Installing tflint via official installer..."
-    curl -fsSL https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | sudo bash
+    curl -fsSL --retry 3 --retry-all-errors https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | sudo bash
     echo "✅ tflint installed ($(tflint --version | head -1))"
 fi
 

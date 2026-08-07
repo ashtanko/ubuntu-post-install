@@ -41,7 +41,7 @@ else
     sudo apt-get install -y ca-certificates curl gnupg
 
     sudo install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key \
+    curl -fsSL --retry 3 --retry-all-errors https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key \
         | sudo gpg --dearmor --yes -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
     sudo chmod a+r /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 

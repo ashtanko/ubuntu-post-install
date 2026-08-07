@@ -98,7 +98,7 @@ if command -v zoxide &>/dev/null; then
     echo "✅ zoxide already installed"
 else
     echo "📦 Installing zoxide via official installer..."
-    curl -fsSL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash
+    curl -fsSL --retry 3 --retry-all-errors https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash
 fi
 
 # --- dust (GitHub release) ---
