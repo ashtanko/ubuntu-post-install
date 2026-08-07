@@ -109,6 +109,7 @@ declare -a TOOLS_ITEMS=(
     "Claude Code CLI|tools/claude.sh"
     "CLI tools (bat, fzf, rg, eza, jq, gh...)|tools/cli-tools.sh"
     "Modern CLI extras (lazygit, delta, zoxide, btop...)|tools/modern-cli.sh"
+    "btop (resource monitor)|tools/btop.sh"
     "Developer Nerd Fonts|tools/fonts.sh"
     "Git config (aliases, defaults, signing)|tools/git-config.sh"
     "pre-commit framework|tools/pre-commit-setup.sh"
