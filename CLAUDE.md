@@ -74,6 +74,10 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `python.sh` | Python 3 + pyenv + pipx + poetry |
 | `rust.sh` | Rust toolchain via rustup |
 | `go.sh` | Latest Go SDK — version detection with fallback (VERSION endpoint → JSON) |
+| `databases.sh` | PostgreSQL/MySQL/Redis/SQLite CLI clients + pgcli/mycli/litecli (interactive shells via pipx) |
+| `kubernetes.sh` | kubectl + helm + k9s + kind + kustomize |
+| `aws-cli.sh` | AWS CLI v2 (official zip) + Session Manager plugin |
+| `terraform.sh` | Terraform (HashiCorp apt repo) + tflint + tfsec |
 
 ### tools/
 | Script | Purpose |
@@ -81,6 +85,7 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `zsh.sh` | Zsh + Oh My Zsh; set `INSTALL_OH_MY_ZSH=no` to skip OMZ |
 | `claude.sh` | Claude Code CLI (installs Node via verified NodeSource repo if missing) |
 | `cli-tools.sh` | bat, fzf, ripgrep, eza, jq, htop, tmux, tree, gh (GitHub CLI) |
+| `modern-cli.sh` | lazygit, delta, zoxide, btop, direnv, fd, dust, hyperfine, tldr (tealdeer) |
 | `btop.sh` | btop — modern resource/process monitor (apt) |
 | `fonts.sh` | JetBrains Mono, Fira Code, Hack — all Nerd Font variants |
 | `git-config.sh` | Opinionated git defaults (rebase pull, autosetup, aliases, global gitignore, optional GPG signing) |
@@ -131,6 +136,8 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 - Shell config additions (`PATH`, env vars): written to both `~/.zshrc` and `~/.bashrc` with a `grep -q` guard to prevent duplicates
 - Emojis: 🚀 start · 📦 installing · ✅ success · ❌ error · ⚠️ warning · 💡 tip · 🔧 configuring · 🔍 detecting
 - GPG repo keys: added via `gpg --dearmor` to `/etc/apt/keyrings/` and pinned with `signed-by=` in the apt source
+- Latest GitHub release lookups: use the `latest_github_tag` helper (follows the `github.com/<owner>/<repo>/releases/latest` redirect), never `api.github.com` — unauthenticated API calls are rate-limited per IP and start returning 403 in CI
+- Network fetches: `curl --retry 3 --retry-all-errors`, so one dropped connection doesn't fail the whole script under `set -e`
 
 ## setup.sh Behaviour
 

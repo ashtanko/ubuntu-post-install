@@ -35,13 +35,17 @@ SCRIPTS=(
   "apps/warp.sh|no|||GUI terminal"
 
   # dev/
+  "dev/aws-cli.sh|yes||command -v aws && command -v session-manager-plugin|"
+  "dev/databases.sh|yes||command -v psql && command -v redis-cli && command -v sqlite3 && command -v mysql|"
   "dev/docker.sh|partial|INSTALL_DOCKER_DESKTOP=no|command -v docker|Docker daemon won't start in container; CLI installs fine"
   "dev/flutter.sh|no|||Flutter SDK and Linux desktop dependencies are large and GUI-focused"
   "dev/go.sh|yes|GO_INSTALL_DIR=/usr/local/go|/usr/local/go/bin/go version||/usr/local/go"
   "dev/java.sh|yes||command -v javac && javac -version|"
+  "dev/kubernetes.sh|yes||command -v kubectl && command -v helm && command -v k9s && command -v kind && command -v kustomize|"
   "dev/node.sh|yes||FILE||\$HOME/.nvm"
   "dev/python.sh|yes||FILE||\$HOME/.pyenv"
   "dev/rust.sh|yes||bash -lc 'command -v rustc && rustc --version'||\$HOME/.cargo,\$HOME/.rustup"
+  "dev/terraform.sh|yes||command -v terraform && command -v tflint && command -v tfsec|"
 
   # tools/
   "tools/backup-home.sh|no|||interactive backup utility; not a setup script"
@@ -50,6 +54,7 @@ SCRIPTS=(
   "tools/cli-tools.sh|yes||FILE|"
   "tools/fonts.sh|yes||test -n \"\$(find \$HOME/.local/share/fonts -type f -print -quit 2>/dev/null)\"||\$HOME/.local/share/fonts"
   "tools/git-config.sh|yes|GIT_NAME=CI Tester,GIT_EMAIL=ci@example.com|git config --global --get pull.rebase||\$HOME/.gitconfig,\$HOME/.config/git"
+  "tools/modern-cli.sh|yes||FILE|"
   "tools/pre-commit-setup.sh|yes||bash -lc 'command -v pre-commit'||\$HOME/.config/pre-commit,\$HOME/.config/git/template"
   "tools/system-maintenance.sh|partial||test -d /var/cache/apt/archives|journalctl/snap/flatpak may be absent; available maintenance steps still run"
   "tools/zsh.sh|yes|INSTALL_OH_MY_ZSH=no|command -v zsh||\$HOME/.oh-my-zsh"
