@@ -39,9 +39,36 @@ else
         | sudo gpg --dearmor --yes -o /etc/apt/keyrings/hashicorp.gpg
     sudo chmod a+r /etc/apt/keyrings/hashicorp.gpg
 
+    # HashiCorp ships an empty suite for some interim Ubuntu releases — 25.04
+    # (plucky) serves an InRelease but carries no packages — so pick the newest
+    # codename that actually publishes terraform, falling back to the LTSes.
+    CODENAME=$(lsb_release -cs)
+    HC_SUITE=""
+    # Note: no `curl | grep -q` here — grep exits at the first match, curl dies
+    # of SIGPIPE, and `set -o pipefail` would fail the check for every suite.
+    HC_INDEX=$(mktemp)
+    # shellcheck disable=SC2064
+    trap "rm -f '$HC_INDEX'" EXIT
+    for CANDIDATE in "$CODENAME" noble jammy; do
+        if curl -fsSL --retry 3 --retry-all-errors -o "$HC_INDEX" \
+            "https://apt.releases.hashicorp.com/dists/${CANDIDATE}/main/binary-${ARCH}/Packages" 2>/dev/null \
+            && grep -q '^Package: terraform$' "$HC_INDEX"; then
+            HC_SUITE="$CANDIDATE"
+            break
+        fi
+    done
+    rm -f "$HC_INDEX"
+    if [ -z "$HC_SUITE" ]; then
+        echo "❌ No HashiCorp apt suite publishes terraform for $CODENAME (${ARCH})"
+        exit 1
+    fi
+    if [ "$HC_SUITE" != "$CODENAME" ]; then
+        echo "⚠️  HashiCorp has no packages for $CODENAME — using the $HC_SUITE suite instead"
+    fi
+
     echo "deb [arch=${ARCH} signed-by=/etc/apt/keyrings/hashicorp.gpg] \
 https://apt.releases.hashicorp.com \
-$(lsb_release -cs) main" \
+${HC_SUITE} main" \
         | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null
 
     echo "📦 Installing terraform..."
