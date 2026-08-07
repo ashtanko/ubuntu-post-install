@@ -13,13 +13,24 @@ echo "🚀 Installing Node.js via NVM..."
 
 NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 
+# Resolve the newest release tag of a GitHub repo without calling api.github.com —
+# unauthenticated API calls are rate-limited per IP and start returning 403 in CI.
+# Follows the /releases/latest redirect and reads the tag back out of the URL.
+latest_github_tag() {
+    local repo="$1" url
+    url=$(curl -fsSLI --retry 3 --retry-all-errors -o /dev/null -w '%{url_effective}' "https://github.com/${repo}/releases/latest")
+    case "$url" in
+        */releases/tag/*) printf '%s\n' "${url##*/releases/tag/}" ;;
+        *) echo "❌ Could not resolve latest release for $repo" >&2; return 1 ;;
+    esac
+}
+
 # Install NVM if not present
 if [ -d "$NVM_DIR" ]; then
     echo "✅ NVM already installed"
 else
     echo "📦 Fetching latest NVM version..."
-    NVM_VERSION=$(curl -fsSL https://api.github.com/repos/nvm-sh/nvm/releases/latest \
-        | grep '"tag_name"' | cut -d'"' -f4)
+    NVM_VERSION=$(latest_github_tag nvm-sh/nvm)
     echo "📥 Installing NVM $NVM_VERSION..."
     curl -fsSL "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" | bash
 fi

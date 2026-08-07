@@ -14,6 +14,18 @@ echo "🚀 Installing Terraform + tflint + tfsec..."
 ARCH=$(dpkg --print-architecture)
 BIN_DIR="/usr/local/bin"
 
+# Resolve the newest release tag of a GitHub repo without calling api.github.com —
+# unauthenticated API calls are rate-limited per IP and start returning 403 in CI.
+# Follows the /releases/latest redirect and reads the tag back out of the URL.
+latest_github_tag() {
+    local repo="$1" url
+    url=$(curl -fsSLI --retry 3 --retry-all-errors -o /dev/null -w '%{url_effective}' "https://github.com/${repo}/releases/latest")
+    case "$url" in
+        */releases/tag/*) printf '%s\n' "${url##*/releases/tag/}" ;;
+        *) echo "❌ Could not resolve latest release for $repo" >&2; return 1 ;;
+    esac
+}
+
 # --- Terraform (HashiCorp apt repo) ---
 if command -v terraform &>/dev/null; then
     echo "✅ terraform already installed ($(terraform version | head -1))"
@@ -42,6 +54,12 @@ fi
 if command -v tflint &>/dev/null; then
     echo "✅ tflint already installed ($(tflint --version | head -1))"
 else
+    # The installer unpacks a .zip, and unzip isn't on a stock Ubuntu install.
+    if ! command -v unzip &>/dev/null; then
+        echo "📦 Installing unzip (required by the tflint installer)..."
+        sudo apt-get update
+        sudo apt-get install -y unzip
+    fi
     echo "📦 Installing tflint via official installer..."
     curl -fsSL https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | sudo bash
     echo "✅ tflint installed ($(tflint --version | head -1))"
@@ -52,8 +70,7 @@ if command -v tfsec &>/dev/null; then
     echo "✅ tfsec already installed ($(tfsec --version))"
 else
     echo "🔍 Resolving latest tfsec release..."
-    TFSEC_VERSION=$(curl -fsSL https://api.github.com/repos/aquasecurity/tfsec/releases/latest \
-        | grep '"tag_name"' | cut -d'"' -f4)
+    TFSEC_VERSION=$(latest_github_tag aquasecurity/tfsec)
     case "$ARCH" in
         amd64) TFSEC_ARCH="amd64" ;;
         arm64) TFSEC_ARCH="arm64" ;;

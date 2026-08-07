@@ -20,6 +20,18 @@ esac
 
 BIN_DIR="/usr/local/bin"
 
+# Resolve the newest release tag of a GitHub repo without calling api.github.com —
+# unauthenticated API calls are rate-limited per IP and start returning 403 in CI.
+# Follows the /releases/latest redirect and reads the tag back out of the URL.
+latest_github_tag() {
+    local repo="$1" url
+    url=$(curl -fsSLI --retry 3 --retry-all-errors -o /dev/null -w '%{url_effective}' "https://github.com/${repo}/releases/latest")
+    case "$url" in
+        */releases/tag/*) printf '%s\n' "${url##*/releases/tag/}" ;;
+        *) echo "❌ Could not resolve latest release for $repo" >&2; return 1 ;;
+    esac
+}
+
 # --- kubectl (Kubernetes apt repo) ---
 if command -v kubectl &>/dev/null; then
     echo "✅ kubectl already installed ($(kubectl version --client --output=yaml 2>/dev/null | grep gitVersion | head -1 | awk '{print $2}'))"
@@ -43,23 +55,23 @@ https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /" \
     echo "✅ kubectl installed"
 fi
 
-# --- helm (official apt repo) ---
+# --- helm (official tarball from get.helm.sh) ---
+# The apt repo at baltocdn.com is not resolvable from every network (CI runners
+# included), so pull the release tarball straight from Helm's own CDN instead.
 if command -v helm &>/dev/null; then
     echo "✅ helm already installed ($(helm version --short 2>/dev/null))"
 else
-    echo "📦 Adding Helm apt repository..."
-    curl -fsSL https://baltocdn.com/helm/signing.asc \
-        | sudo gpg --dearmor --yes -o /etc/apt/keyrings/helm.gpg
-    sudo chmod a+r /etc/apt/keyrings/helm.gpg
-
-    echo "deb [arch=${ARCH} signed-by=/etc/apt/keyrings/helm.gpg] \
-https://baltocdn.com/helm/stable/debian/ all main" \
-        | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list > /dev/null
-
-    echo "📦 Installing helm..."
-    sudo apt-get update
-    sudo apt-get install -y helm
-    echo "✅ helm installed"
+    echo "🔍 Resolving latest helm release..."
+    HELM_VERSION=$(curl -fsSL --retry 3 --retry-all-errors https://get.helm.sh/helm-latest-version)
+    echo "📦 Downloading helm $HELM_VERSION..."
+    TMP_HELM=$(mktemp -d)
+    # shellcheck disable=SC2064
+    trap "rm -rf '$TMP_HELM'" EXIT
+    curl -fsSL --retry 3 --retry-all-errors -o "$TMP_HELM/helm.tar.gz" \
+        "https://get.helm.sh/helm-${HELM_VERSION}-linux-${GO_ARCH}.tar.gz"
+    tar -xzf "$TMP_HELM/helm.tar.gz" -C "$TMP_HELM" --strip-components=1
+    sudo install -m 0755 "$TMP_HELM/helm" "$BIN_DIR/helm"
+    echo "✅ helm installed → $BIN_DIR/helm"
 fi
 
 # --- k9s (GitHub release) ---
@@ -67,8 +79,7 @@ if command -v k9s &>/dev/null; then
     echo "✅ k9s already installed ($(k9s version --short 2>/dev/null | head -1))"
 else
     echo "🔍 Resolving latest k9s release..."
-    K9S_VERSION=$(curl -fsSL https://api.github.com/repos/derailed/k9s/releases/latest \
-        | grep '"tag_name"' | cut -d'"' -f4)
+    K9S_VERSION=$(latest_github_tag derailed/k9s)
     K9S_URL="https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_${GO_ARCH}.tar.gz"
     echo "📦 Downloading k9s $K9S_VERSION..."
     TMP=$(mktemp -d)
@@ -84,8 +95,7 @@ if command -v kind &>/dev/null; then
     echo "✅ kind already installed ($(kind version 2>/dev/null))"
 else
     echo "🔍 Resolving latest kind release..."
-    KIND_VERSION=$(curl -fsSL https://api.github.com/repos/kubernetes-sigs/kind/releases/latest \
-        | grep '"tag_name"' | cut -d'"' -f4)
+    KIND_VERSION=$(latest_github_tag kubernetes-sigs/kind)
     KIND_URL="https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-linux-${GO_ARCH}"
     echo "📦 Downloading kind $KIND_VERSION..."
     TMP_KIND=$(mktemp)
@@ -96,15 +106,21 @@ else
     echo "✅ kind installed → $BIN_DIR/kind"
 fi
 
-# --- kustomize (official installer script — picks correct arch) ---
+# --- kustomize (GitHub release; tags are prefixed `kustomize/`) ---
 if command -v kustomize &>/dev/null; then
     echo "✅ kustomize already installed ($(kustomize version 2>/dev/null))"
 else
-    echo "📦 Installing kustomize..."
+    echo "🔍 Resolving latest kustomize release..."
+    KUST_TAG=$(latest_github_tag kubernetes-sigs/kustomize)   # e.g. kustomize/v5.8.1
+    KUST_VERSION="${KUST_TAG##*/}"                            # e.g. v5.8.1
+    # The `/` in the tag has to stay percent-encoded in the download URL.
+    KUST_URL="https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUST_VERSION}/kustomize_${KUST_VERSION}_linux_${GO_ARCH}.tar.gz"
+    echo "📦 Downloading kustomize $KUST_VERSION..."
     TMP_KUST=$(mktemp -d)
     # shellcheck disable=SC2064
     trap "rm -rf '$TMP_KUST'" EXIT
-    (cd "$TMP_KUST" && curl -fsSL https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh | bash)
+    curl -fsSL --retry 3 --retry-all-errors -o "$TMP_KUST/kustomize.tar.gz" "$KUST_URL"
+    tar -xzf "$TMP_KUST/kustomize.tar.gz" -C "$TMP_KUST"
     sudo install -m 0755 "$TMP_KUST/kustomize" "$BIN_DIR/kustomize"
     echo "✅ kustomize installed → $BIN_DIR/kustomize"
 fi

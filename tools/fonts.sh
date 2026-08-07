@@ -21,9 +21,20 @@ fi
 FONTS_DIR="$HOME/.local/share/fonts"
 mkdir -p "$FONTS_DIR"
 
+# Resolve the newest release tag of a GitHub repo without calling api.github.com —
+# unauthenticated API calls are rate-limited per IP and start returning 403 in CI.
+# Follows the /releases/latest redirect and reads the tag back out of the URL.
+latest_github_tag() {
+    local repo="$1" url
+    url=$(curl -fsSLI --retry 3 --retry-all-errors -o /dev/null -w '%{url_effective}' "https://github.com/${repo}/releases/latest")
+    case "$url" in
+        */releases/tag/*) printf '%s\n' "${url##*/releases/tag/}" ;;
+        *) echo "❌ Could not resolve latest release for $repo" >&2; return 1 ;;
+    esac
+}
+
 # Fetch latest nerd-fonts release tag once
-NERD_VERSION=$(curl -fsSL https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest \
-    | grep '"tag_name"' | cut -d'"' -f4)
+NERD_VERSION=$(latest_github_tag ryanoasis/nerd-fonts)
 echo "📋 Nerd Fonts version: $NERD_VERSION"
 
 install_nerd_font() {

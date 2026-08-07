@@ -136,6 +136,8 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 - Shell config additions (`PATH`, env vars): written to both `~/.zshrc` and `~/.bashrc` with a `grep -q` guard to prevent duplicates
 - Emojis: 🚀 start · 📦 installing · ✅ success · ❌ error · ⚠️ warning · 💡 tip · 🔧 configuring · 🔍 detecting
 - GPG repo keys: added via `gpg --dearmor` to `/etc/apt/keyrings/` and pinned with `signed-by=` in the apt source
+- Latest GitHub release lookups: use the `latest_github_tag` helper (follows the `github.com/<owner>/<repo>/releases/latest` redirect), never `api.github.com` — unauthenticated API calls are rate-limited per IP and start returning 403 in CI
+- Network fetches: `curl --retry 3 --retry-all-errors`, so one dropped connection doesn't fail the whole script under `set -e`
 
 ## setup.sh Behaviour
 

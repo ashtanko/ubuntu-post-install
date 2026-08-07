@@ -22,6 +22,18 @@ BIN_DIR="/usr/local/bin"
 USER_BIN="$HOME/.local/bin"
 mkdir -p "$USER_BIN"
 
+# Resolve the newest release tag of a GitHub repo without calling api.github.com —
+# unauthenticated API calls are rate-limited per IP and start returning 403 in CI.
+# Follows the /releases/latest redirect and reads the tag back out of the URL.
+latest_github_tag() {
+    local repo="$1" url
+    url=$(curl -fsSLI --retry 3 --retry-all-errors -o /dev/null -w '%{url_effective}' "https://github.com/${repo}/releases/latest")
+    case "$url" in
+        */releases/tag/*) printf '%s\n' "${url##*/releases/tag/}" ;;
+        *) echo "❌ Could not resolve latest release for $repo" >&2; return 1 ;;
+    esac
+}
+
 install_if_missing() {
     local cmd="$1"
     local pkg="$2"
@@ -48,8 +60,7 @@ elif apt-cache show git-delta &>/dev/null; then
     sudo apt-get install -y git-delta
 else
     echo "🔍 Resolving latest delta release (apt package unavailable)..."
-    DELTA_VERSION=$(curl -fsSL https://api.github.com/repos/dandavison/delta/releases/latest \
-        | grep '"tag_name"' | cut -d'"' -f4)
+    DELTA_VERSION=$(latest_github_tag dandavison/delta)
     DELTA_URL="https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta-musl_${DELTA_VERSION}_${ARCH}.deb"
     DEB=$(mktemp --suffix=.deb)
     trap 'rm -f "$DEB"' EXIT
@@ -70,8 +81,7 @@ if command -v lazygit &>/dev/null; then
     echo "✅ lazygit already installed"
 else
     echo "🔍 Resolving latest lazygit release..."
-    LG_VERSION=$(curl -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest \
-        | grep '"tag_name"' | cut -d'"' -f4)
+    LG_VERSION=$(latest_github_tag jesseduffield/lazygit)
     LG_NUM=${LG_VERSION#v}
     LG_URL="https://github.com/jesseduffield/lazygit/releases/download/${LG_VERSION}/lazygit_${LG_NUM}_Linux_${LAZYGIT_ARCH}.tar.gz"
     echo "📦 Downloading lazygit $LG_VERSION..."
@@ -96,8 +106,7 @@ if command -v dust &>/dev/null; then
     echo "✅ dust already installed"
 else
     echo "🔍 Resolving latest dust release..."
-    DUST_VERSION=$(curl -fsSL https://api.github.com/repos/bootandy/dust/releases/latest \
-        | grep '"tag_name"' | cut -d'"' -f4)
+    DUST_VERSION=$(latest_github_tag bootandy/dust)
     DUST_URL="https://github.com/bootandy/dust/releases/download/${DUST_VERSION}/dust-${DUST_VERSION}-${RUST_ARCH}-unknown-linux-gnu.tar.gz"
     echo "📦 Downloading dust $DUST_VERSION..."
     TMP_D=$(mktemp -d)
@@ -114,8 +123,7 @@ if command -v tldr &>/dev/null; then
     echo "✅ tldr already installed"
 else
     echo "🔍 Resolving latest tealdeer release..."
-    TLDR_VERSION=$(curl -fsSL https://api.github.com/repos/tealdeer-rs/tealdeer/releases/latest \
-        | grep '"tag_name"' | cut -d'"' -f4)
+    TLDR_VERSION=$(latest_github_tag tealdeer-rs/tealdeer)
     TLDR_URL="https://github.com/tealdeer-rs/tealdeer/releases/download/${TLDR_VERSION}/tealdeer-linux-${RUST_ARCH}-musl"
     echo "📦 Downloading tealdeer $TLDR_VERSION..."
     TMP_T=$(mktemp)
