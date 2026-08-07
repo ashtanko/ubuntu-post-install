@@ -7,7 +7,10 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[[ -f "$REPO_ROOT/.env" ]] && { set -a; source "$REPO_ROOT/.env"; set +a; }
+CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
+# shellcheck source=lib/config.bash
+source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
+load_config "$REPO_ROOT"
 
 echo "🚀 Installing VS Code extensions from \$VSCODE_EXTENSIONS..."
 
@@ -18,8 +21,8 @@ fi
 
 EXTS="${VSCODE_EXTENSIONS:-}"
 if [ -z "$EXTS" ]; then
-    echo "⚠️  VSCODE_EXTENSIONS is empty in .env — nothing to install"
-    echo "💡 Example .env entry:"
+    echo "⚠️  VSCODE_EXTENSIONS is not configured — nothing to install"
+    echo "💡 Example configuration entry:"
     echo "     VSCODE_EXTENSIONS=\"ms-python.python rust-lang.rust-analyzer dbaeumer.vscode-eslint\""
     exit 0
 fi

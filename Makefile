@@ -4,29 +4,45 @@
 SHELL  := /bin/bash
 UBUNTU ?= 24.04
 SCRIPT ?=
+VERSION ?=
+export VERSION
 
 .DEFAULT_GOAL := help
-.PHONY: help lint manifest check smoke smoke-all idempotency idempotency-all \
-        setup version tag dist release-dry-run clean clean-markers
+.PHONY: help lint manifest config-regression runtime-regression installer-regression \
+        regressions check smoke smoke-all \
+        idempotency idempotency-all setup version tag dist release-artifact \
+        release-dry-run clean clean-markers
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make \033[36m<target>\033[0m\n\nTargets:\n"} \
 	     /^[a-zA-Z_-]+:.*##/ {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "Variables:"
-	@echo "  UBUNTU=<version>     22.04 | 24.04 | 25.04 | 26.04 (default: $(UBUNTU))"
+	@echo "  UBUNTU=<version>     22.04 | 24.04 | 26.04 (default: $(UBUNTU))"
 	@echo "  SCRIPT=<path.sh>     scope smoke/idempotency to one script"
 	@echo "  VERSION=<x.y.z>      required by 'make tag'"
 
 # ── Static checks ────────────────────────────────────────────────────────────
 
-lint: ## Run shellcheck on every .sh file
+lint: ## Run shellcheck on every .sh and .bash file
 	bash tests/lint.sh
 
 manifest: ## Verify every .sh is registered in tests/manifest.sh
 	bash tests/check-manifest-coverage.sh
 
-check: lint manifest ## Run all static checks
+config-regression: ## Verify config precedence and secret export isolation
+	bash tests/config-regression.sh
+
+runtime-regression: ## Verify runtime safety and transactional install behavior
+	bash tests/runtime-core-regression.sh
+
+installer-regression: ## Verify installer edge cases and failure reporting
+	bash tests/installer-regression.sh
+
+regressions: ## Run all fast local regression checks
+	bash tests/regression.sh
+
+check: lint manifest regressions ## Run all static and regression checks
 
 # ── Docker tests ─────────────────────────────────────────────────────────────
 
@@ -34,7 +50,7 @@ smoke: ## Smoke stage (UBUNTU=… SCRIPT=… to scope)
 	bash tests/run-in-docker.sh $(UBUNTU) smoke $(SCRIPT)
 
 smoke-all: ## Smoke stage across every supported Ubuntu version
-	@for v in 22.04 24.04 25.04 26.04; do \
+	@for v in 22.04 24.04 26.04; do \
 		echo "==> smoke / ubuntu-$$v"; \
 		bash tests/run-in-docker.sh $$v smoke || exit 1; \
 	done
@@ -43,7 +59,7 @@ idempotency: ## Idempotency stage (UBUNTU=… SCRIPT=… to scope)
 	bash tests/run-in-docker.sh $(UBUNTU) idempotency $(SCRIPT)
 
 idempotency-all: ## Idempotency stage across every supported Ubuntu version
-	@for v in 22.04 24.04 25.04 26.04; do \
+	@for v in 22.04 24.04 26.04; do \
 		echo "==> idempotency / ubuntu-$$v"; \
 		bash tests/run-in-docker.sh $$v idempotency || exit 1; \
 	done
@@ -63,9 +79,9 @@ clean-markers: ## Reset ~/.cache/ubuntu-setup/ markers (force re-run on next set
 # ── Release ──────────────────────────────────────────────────────────────────
 
 tag: ## Cut and push a release tag (make tag VERSION=1.0.0)
-	@test -n "$(VERSION)" || { echo "VERSION required: make tag VERSION=1.0.0"; exit 1; }
-	@echo "$(VERSION)" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$$' \
-		|| { echo "VERSION must be semver (e.g. 1.0.0 or 1.0.0-rc1)"; exit 1; }
+	@test -n "$$VERSION" || { echo "VERSION required: make tag VERSION=1.0.0"; exit 1; }
+	@source lib/release.bash; is_semver "$$VERSION" \
+		|| { echo "VERSION must be SemVer (e.g. 1.0.0 or 1.0.0-rc1)"; exit 1; }
 	@test -z "$$(git status --porcelain)" \
 		|| { echo "working tree must be clean before tagging"; exit 1; }
 	git tag -a "v$(VERSION)" -m "Release v$(VERSION)"
@@ -83,7 +99,7 @@ dist: clean ## Build the release tarball locally (mirrors release.yml; no upload
 	echo "==> staging $$STAGE"; \
 	mkdir -p "$$STAGE"; \
 	rsync -a --exclude='.git/' --exclude='.github/' --exclude='.idea/' \
-	         --exclude='dist/' --exclude='.env' ./ "$$STAGE/"; \
+	         --exclude='.omx/' --exclude='dist/' --exclude='.env' ./ "$$STAGE/"; \
 	sed -i "s/^VERSION=.*/VERSION=\"$$SEMVER\"/" "$$STAGE/setup.sh"; \
 	echo "$$SEMVER" > "$$STAGE/VERSION"; \
 	cd dist && tar -czf "ubuntu-post-install-$$SEMVER.tar.gz" "ubuntu-post-install-$$SEMVER"; \
@@ -92,7 +108,13 @@ dist: clean ## Build the release tarball locally (mirrors release.yml; no upload
 	sha256sum "ubuntu-post-install-$$SEMVER.tar.gz" install.sh > SHA256SUMS; \
 	echo "==> dist/"; ls -la
 
-release-dry-run: check dist ## Lint, manifest-check, and build a tarball — no publish
+release-artifact: dist ## Build and verify the local release artifact set
+	@VERSION_LOCAL=$$(git describe --tags --exact-match 2>/dev/null \
+		|| git describe --tags --abbrev=0 2>/dev/null \
+		|| echo "v0.0.0-local"); \
+	bash tests/release-artifact.sh "$${VERSION_LOCAL#v}"
+
+release-dry-run: check release-artifact ## Run checks and verify a tarball — no publish
 
 clean: ## Remove build artifacts
 	rm -rf dist/

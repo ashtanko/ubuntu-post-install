@@ -1,6 +1,6 @@
 # Script Inventory
 
-Every script in this repo is independent — `bash <path>` runs it standalone, or pick it from the [`setup.sh`](../setup.sh) menu. All scripts are idempotent, source `.env` automatically, and re-exec under `bash` if invoked via `sh`.
+Every installer script can run standalone with `bash <path>`, or from the [`setup.sh`](../setup.sh) menu when registered there. Scripts load shared configuration, include re-run guards appropriate to their installer, and re-exec under `bash` if invoked via `sh`.
 
 ## essentials/
 
@@ -32,9 +32,9 @@ GUI applications.
 
 | Script | Purpose |
 |---|---|
-| [browsers.sh](../apps/browsers.sh) | Google Chrome |
+| [browsers.sh](../apps/browsers.sh) | Google Chrome (amd64 only; rejected before apt changes on other architectures) |
 | [guake.sh](../apps/guake.sh) | Guake drop-down terminal |
-| [warp.sh](../apps/warp.sh) | Warp terminal |
+| [warp.sh](../apps/warp.sh) | Warp terminal (amd64 repository only; rejected before apt changes otherwise) |
 | [vscode.sh](../apps/vscode.sh) | VS Code via Microsoft apt repo |
 
 ## dev/
@@ -45,7 +45,7 @@ Language runtimes and SDKs.
 |---|---|
 | [java.sh](../dev/java.sh) | OpenJDK 8/11/17/21/25 — interactive menu or `JAVA_VERSION` env (installs side-by-side; switch default via `update-alternatives`) |
 | [docker.sh](../dev/docker.sh) | Docker Engine + Docker Desktop + user group |
-| [flutter.sh](../dev/flutter.sh) | Flutter SDK (stable), Android deps, Linux desktop deps |
+| [flutter.sh](../dev/flutter.sh) | Flutter SDK (stable) + Linux desktop dependencies; Android SDK setup remains separate |
 | [node.sh](../dev/node.sh) | Node.js via NVM — installs latest LTS |
 | [python.sh](../dev/python.sh) | Python 3 + pyenv + pipx + poetry |
 | [rust.sh](../dev/rust.sh) | Rust toolchain via rustup |

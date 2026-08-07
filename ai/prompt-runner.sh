@@ -7,11 +7,14 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[[ -f "$REPO_ROOT/.env" ]] && { set -a; source "$REPO_ROOT/.env"; set +a; }
+CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
+# shellcheck source=lib/config.bash
+source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
+load_config "$REPO_ROOT"
 
 # This installer drops a `prompt` command into ~/.local/bin that runs a text
 # (.prompt or any text) file against a configured backend: ollama (default),
-# openai, or anthropic. Backends pull keys/host from .env at runtime.
+# openai, or anthropic. Backends load keys/host from shared configuration at runtime.
 #
 # Usage after install:
 #   prompt path/to/file.prompt                 # use $PROMPT_BACKEND
@@ -30,9 +33,10 @@ cat > "$BIN" <<'RUNNER'
 set -euo pipefail
 
 PROMPT_RUNNER_REPO="__REPO_ROOT__"
-if [ -n "${PROMPT_RUNNER_REPO:-}" ] && [ "$PROMPT_RUNNER_REPO" != "__REPO_ROOT__" ] && [ -f "$PROMPT_RUNNER_REPO/.env" ]; then
-    set -a; source "$PROMPT_RUNNER_REPO/.env"; set +a
-fi
+CONFIG_HELPER="$PROMPT_RUNNER_REPO/lib/config.bash"
+# shellcheck source=lib/config.bash
+source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
+load_config "$PROMPT_RUNNER_REPO"
 
 usage() {
     cat <<EOF
@@ -46,7 +50,7 @@ Backends (set via -b or \$PROMPT_BACKEND):
   openai     OpenAI Chat Completions, requires \$OPENAI_API_KEY
   anthropic  Anthropic Messages,        requires \$ANTHROPIC_API_KEY
 
-Defaults can be set in .env: PROMPT_BACKEND, PROMPT_MODEL, OLLAMA_HOST.
+Defaults can be set in repo .env or ~/.env-ubuntu-post-install: PROMPT_BACKEND, PROMPT_MODEL, OLLAMA_HOST.
 EOF
     exit "${1:-0}"
 }
@@ -86,7 +90,7 @@ case "$BACKEND" in
         | jq -r '.response'
         ;;
     openai)
-        : "${OPENAI_API_KEY:?OPENAI_API_KEY not set in environment / .env}"
+        : "${OPENAI_API_KEY:?OPENAI_API_KEY not set in environment or configuration}"
         : "${MODEL:=gpt-4o-mini}"
         curl -fsSL https://api.openai.com/v1/chat/completions \
             -H "Authorization: Bearer $OPENAI_API_KEY" \
@@ -96,7 +100,7 @@ case "$BACKEND" in
         | jq -r '.choices[0].message.content'
         ;;
     anthropic)
-        : "${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY not set in environment / .env}"
+        : "${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY not set in environment or configuration}"
         : "${MODEL:=claude-opus-4-7}"
         curl -fsSL https://api.anthropic.com/v1/messages \
             -H "x-api-key: $ANTHROPIC_API_KEY" \

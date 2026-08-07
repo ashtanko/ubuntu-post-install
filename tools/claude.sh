@@ -7,7 +7,10 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[[ -f "$REPO_ROOT/.env" ]] && { set -a; source "$REPO_ROOT/.env"; set +a; }
+CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
+# shellcheck source=lib/config.bash
+source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
+load_config "$REPO_ROOT"
 
 echo "🚀 Installing Claude Code CLI..."
 
@@ -55,15 +58,36 @@ else
     echo "✅ Node.js $(node -v) installed"
 fi
 
+if ! command -v npm &>/dev/null; then
+    echo "❌ npm is required but was not found after installing/checking Node.js."
+    echo "💡 Install npm, or run dev/node.sh to install Node.js via NVM."
+    exit 1
+fi
+
+NPM_BIN=$(type -P npm)
+if [[ "$NPM_BIN" != /* ]]; then
+    NPM_BIN="$(cd "$(dirname "$NPM_BIN")" && pwd)/${NPM_BIN##*/}"
+fi
+if ! NPM_PREFIX=$("$NPM_BIN" config get prefix) || [ -z "$NPM_PREFIX" ]; then
+    echo "❌ Could not determine npm's global install prefix"
+    exit 1
+fi
+
 # Install Claude Code globally
 if command -v claude &>/dev/null; then
     echo "✅ Claude Code already installed ($(claude --version 2>/dev/null || echo 'version unknown'))"
-    echo "💡 Update with: sudo npm update -g @anthropic-ai/claude-code"
+    echo "💡 Update with: npm update -g @anthropic-ai/claude-code (use sudo only for a system-owned npm prefix)"
     exit 0
 fi
 
 echo "📦 Installing @anthropic-ai/claude-code..."
-sudo npm install -g @anthropic-ai/claude-code
+if [[ "$NPM_PREFIX" == "$HOME" || "$NPM_PREFIX" == "$HOME/"* ]] \
+    || [ -w "$NPM_PREFIX" ] \
+    || { [ ! -e "$NPM_PREFIX" ] && [ -w "$(dirname "$NPM_PREFIX")" ]; }; then
+    "$NPM_BIN" install -g @anthropic-ai/claude-code
+else
+    sudo "$NPM_BIN" install -g @anthropic-ai/claude-code
+fi
 
 if command -v claude &>/dev/null; then
     echo "✅ Claude Code installed successfully!"

@@ -7,11 +7,16 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[[ -f "$REPO_ROOT/.env" ]] && { set -a; source "$REPO_ROOT/.env"; set +a; }
+CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
+# shellcheck source=lib/config.bash
+source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
+load_config "$REPO_ROOT"
 
 echo "🚀 Installing Node.js via NVM..."
 
 NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+# The upstream installer reads NVM_DIR from its child-process environment.
+export NVM_DIR
 
 # Install NVM if not present
 if [ -d "$NVM_DIR" ]; then

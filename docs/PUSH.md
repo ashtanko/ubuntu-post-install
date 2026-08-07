@@ -13,7 +13,7 @@ We follow [Semantic Versioning](https://semver.org/):
 | **PATCH** (`v1.0.0` → `v1.0.1`) | Bug fix, doc update, idempotency tightening — nothing user-facing changes |
 | **Pre-release** (`v1.1.0-rc1`, `v1.1.0-beta.2`) | Try a release without marking it `latest`. Tag still triggers the workflow. |
 
-Tags **must** start with `v` — the workflow regex (`v[0-9]+.[0-9]+.[0-9]+` and `v[0-9]+.[0-9]+.[0-9]+-*`) is strict.
+Tags **must** start with `v`. The workflow receives `v*` tags, then rejects anything that is not strict Semantic Versioning before building a release.
 
 ## Pre-flight
 
@@ -24,8 +24,7 @@ git checkout main
 git pull --ff-only
 git status                                # must be clean
 
-bash tests/lint.sh                        # shellcheck on all scripts
-bash tests/check-manifest-coverage.sh     # every .sh registered
+make check                                # lint, manifest validation, regressions
 bash tests/run-in-docker.sh               # local smoke (optional, slow)
 ```
 
@@ -41,11 +40,12 @@ git push origin "$TAG"
 
 That's it. Within ~5–15 minutes (depending on the Docker matrix), the workflow will:
 
-1. Run shellcheck + manifest coverage.
-2. Run the smoke stage on Ubuntu 22.04, 24.04, 25.04, and 26.04 in parallel.
+1. Run `make check`: shellcheck, manifest validation, and all local regressions.
+2. Run the smoke stage on Ubuntu 22.04, 24.04, and 26.04 in parallel.
 3. Stage `dist/ubuntu-post-install-<semver>/`, `sed`-replace `VERSION="dev"` in `setup.sh` with the tag, write a `VERSION` file.
 4. Build `dist/ubuntu-post-install-<semver>.tar.gz`, copy `install.sh` into `dist/`, and generate `dist/SHA256SUMS`.
-5. Publish a GitHub Release at `https://github.com/ashtanko/ubuntu-post-install/releases/tag/<tag>` with auto-generated notes (PR titles since the previous tag) and three attached files: the tarball, `install.sh`, and `SHA256SUMS`.
+5. Verify checksums, archive paths, required runtime files, shell syntax, and both extracted and installed launcher behavior.
+6. Publish a GitHub Release with auto-generated notes and three attached files: the tarball, `install.sh`, and `SHA256SUMS`. Versions containing a prerelease suffix are marked as GitHub prereleases and do not replace `latest`.
 
 Watch progress at the [Actions tab](https://github.com/ashtanko/ubuntu-post-install/actions/workflows/release.yml).
 

@@ -7,11 +7,15 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[[ -f "$REPO_ROOT/.env" ]] && { set -a; source "$REPO_ROOT/.env"; set +a; }
+CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
+# shellcheck source=lib/config.bash
+source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
+load_config "$REPO_ROOT"
 
 echo "🚀 Configuring swap..."
 
-SWAP_FILE="/swapfile"
+SWAP_FILE="${SWAP_FILE:-/swapfile}"
+FSTAB_FILE="${FSTAB_FILE:-/etc/fstab}"
 SWAP_SIZE_GB="${SWAP_SIZE_GB:-4}"
 
 # Skip if any swap is already active (file or partition)
@@ -24,19 +28,20 @@ fi
 if [ -f "$SWAP_FILE" ]; then
     echo "⚠️  $SWAP_FILE exists but is not active — enabling it"
     sudo swapon "$SWAP_FILE"
-    exit 0
+else
+    echo "📦 Creating ${SWAP_SIZE_GB}G swap file at $SWAP_FILE..."
+    sudo fallocate -l "${SWAP_SIZE_GB}G" "$SWAP_FILE"
+    sudo chmod 600 "$SWAP_FILE"
+    sudo mkswap "$SWAP_FILE"
+    sudo swapon "$SWAP_FILE"
 fi
 
-echo "📦 Creating ${SWAP_SIZE_GB}G swap file at $SWAP_FILE..."
-sudo fallocate -l "${SWAP_SIZE_GB}G" "$SWAP_FILE"
-sudo chmod 600 "$SWAP_FILE"
-sudo mkswap "$SWAP_FILE"
-sudo swapon "$SWAP_FILE"
-
 # Persist across reboots
-if ! grep -qE "^${SWAP_FILE}\s" /etc/fstab; then
-    echo "${SWAP_FILE} none swap sw 0 0" | sudo tee -a /etc/fstab > /dev/null
-    echo "✅ Added $SWAP_FILE to /etc/fstab"
+if ! awk -v swap_file="$SWAP_FILE" \
+    '$1 == swap_file && $2 == "none" && $3 == "swap" { found = 1 } END { exit !found }' \
+    "$FSTAB_FILE"; then
+    echo "${SWAP_FILE} none swap sw 0 0" | sudo tee -a "$FSTAB_FILE" > /dev/null
+    echo "✅ Added $SWAP_FILE to $FSTAB_FILE"
 fi
 
 echo ""

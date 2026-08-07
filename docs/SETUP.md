@@ -5,9 +5,9 @@
 ## Flow
 
 1. **Bash re-exec shim** — re-execs under bash if invoked via `sh`, so dash-isms in the menu code don't break.
-2. **`.env` is sourced** from the repo root with `set -a`, so every variable becomes available to child scripts as well.
+2. **Configuration is loaded** with precedence `environment > repo .env > ~/.env-ubuntu-post-install`; config-only secrets are not automatically exported to child processes.
 3. **Marker directory** is created at `~/.cache/ubuntu-setup/`.
-4. **Eight category menus** are printed in order: Essentials → System → Apps → Dev → Tools → IDE → AI → Software. You select items per category.
+4. **Nine category menus** are printed in order: Essentials → System → Apps → Dev → Tools → IDE → AI → Software → VPN. You select items per category.
 5. **Confirmation** — selections are echoed back; press `Y` (default) to proceed, `n` to abort.
 6. **Run loop** — each selected script is invoked via `bash`, with stdout+stderr `tee`'d to the log.
 7. **Summary** — pass / fail / skipped counts; non-zero exit code if any script failed.
@@ -41,7 +41,7 @@ A marker is created when the script's exit status is `0`. It's checked at the st
 | What | Where |
 |---|---|
 | Default | `~/ubuntu-setup.log` |
-| Override | set `SETUP_LOG_FILE` in `.env` |
+| Override | export `SETUP_LOG_FILE`, or set it in repo `.env` / `~/.env-ubuntu-post-install` |
 | Format | `tee -a` of the menu's own messages plus full stdout+stderr of every script run |
 
 Each run header is timestamped with `date '+%Y-%m-%d %H:%M:%S'`. Tail it for the actual error when something fails:
@@ -86,13 +86,13 @@ bash dev/node.sh           # runs regardless of marker state
 bash tools/cli-tools.sh    # idempotency is enforced inside the script itself
 ```
 
-Each script has its own internal idempotency check (e.g. `command -v node`, `[ -d "$NVM_DIR" ]`) — re-running a standalone script on a machine where the tool is already installed is safe and exits early.
+Scripts use repeat-safe guards where the underlying operation supports them (for example `command -v node` or `[ -d "$NVM_DIR" ]`). Container-compatible entries are exercised twice by CI; `compat=no` entries require the manual validation documented in their manifest reason.
 
 ## Resilience notes
 
 - **Failures don't stop the run loop.** A failed script is logged and reported in the summary; the next selected script still runs.
 - **Sudo prompts** happen inside child scripts. If you cancel a sudo prompt, the child script exits non-zero, **no marker is written**, and you can re-run it.
-- **Environment variables** set in your shell take precedence over `.env`. Inline overrides also work: `SWAP_SIZE_GB=8 bash setup.sh`.
+- **Environment variables** set in your shell take precedence over repo `.env` and the stable user config. Inline overrides also work: `SWAP_SIZE_GB=8 bash setup.sh`.
 - **Categorical order** matters when scripts depend on each other (e.g. [system/base.sh](../system/base.sh) before [tools/cli-tools.sh](../tools/cli-tools.sh)). The menu is laid out in the recommended order; running it top-to-bottom is the safe default.
 
 See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for what to do when a step fails.

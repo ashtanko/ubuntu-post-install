@@ -16,7 +16,11 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[[ -f "$REPO_ROOT/.env" ]] && { set -a; source "$REPO_ROOT/.env"; set +a; }
+CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
+[[ -r "$CONFIG_HELPER" ]] || { echo "❌ missing config helper: $CONFIG_HELPER" >&2; exit 1; }
+# shellcheck source=../lib/config.bash
+source "$CONFIG_HELPER"
+load_config "$REPO_ROOT"
 
 echo "🚀 Installing <thing>..."
 
@@ -52,7 +56,7 @@ Real examples to model on:
 
 ## Idempotency
 
-The single hardest rule: **running your script twice on the same machine must succeed both times**, and the second run must not duplicate any state. CI enforces this in the [idempotency stage](TESTING.md), which diffs system state between two runs and fails on any change.
+The single hardest rule: **running your script twice on the same machine should succeed both times**, and the second run must not duplicate state. CI enforces this for runnable container-compatible entries in the [idempotency stage](TESTING.md), which diffs configured system state between two runs. `compat=no` scripts need equivalent manual validation and a concrete skip reason.
 
 Cheap and reliable idempotency checks:
 
@@ -80,7 +84,7 @@ Every script in the repo has a row in [tests/manifest.sh](../tests/manifest.sh).
 Format:
 
 ```
-"path|compat|env_vars|verify_cmd|skip_reason"
+"path|compat|env_vars|verify_cmd|skip_reason|state_paths"
 ```
 
 | Column | What goes here |
@@ -90,6 +94,7 @@ Format:
 | `env_vars` | Comma-separated `KEY=VALUE` pairs to seed before the script runs |
 | `verify_cmd` | A shell one-liner that exits 0 on success — **or** the literal `FILE` |
 | `skip_reason` | Required when `compat` is `no` or `partial` |
+| `state_paths` | Optional comma-separated safe paths whose hashes, modes, types, and link targets must remain stable on run two |
 
 Examples:
 
@@ -121,21 +126,22 @@ Keep the label short — the menu wraps on long lines.
 ```bash
 bash tests/lint.sh                                          # shellcheck
 bash tests/check-manifest-coverage.sh                       # manifest coverage
+bash tests/regression.sh                                    # local behavior regressions
 bash tests/run-in-docker.sh 24.04 smoke dev/mytool.sh       # smoke
 bash tests/run-in-docker.sh 24.04 idempotency dev/mytool.sh # idempotency
 ```
 
-If your script is `compat=no`, the smoke/idempotency commands will skip it — that's expected.
+If a targeted script is `compat=no`, the runner reports the skip and exits non-zero because no runnable work occurred. Validate that script manually on a suitable host and keep the manifest reason specific.
 
 ## CI gates
 
 | Gate | Workflow |
 |---|---|
-| shellcheck on every `.sh` | [lint.yml](../.github/workflows/lint.yml) |
-| Manifest coverage | [lint.yml](../.github/workflows/lint.yml) |
-| Smoke + idempotency × Ubuntu 22.04 / 24.04 / 25.04 / 26.04 | [docker-tests.yml](../.github/workflows/docker-tests.yml) |
+| ShellCheck on every `.sh` / `.bash` file | [lint.yml](../.github/workflows/lint.yml) |
+| Manifest schema/coverage + local regressions | [lint.yml](../.github/workflows/lint.yml) |
+| Smoke + idempotency × Ubuntu 22.04 / 24.04 / 26.04 | [docker-tests.yml](../.github/workflows/docker-tests.yml) |
 
-[.shellcheckrc](../.shellcheckrc) silences `SC1091` (sourced-file-not-found) so `.env` sourcing doesn't trigger noise. Other shellcheck warnings should be fixed, not silenced.
+[.shellcheckrc](../.shellcheckrc) silences `SC1091` for dynamic shared-helper paths. Other shellcheck warnings should be fixed, not silenced.
 
 ## Style
 

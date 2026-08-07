@@ -7,34 +7,44 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
-  shellcheck:
+  regressions:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install shellcheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
-      - name: Run shellcheck
-        run: bash tests/lint.sh
+      - name: Run local regression gate
+        run: make check
 
-  manifest-coverage:
+  current-lts-smoke:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: bash tests/check-manifest-coverage.sh
+      - uses: docker/setup-buildx-action@v3
+      - name: Run Ubuntu 24.04 smoke suite
+        run: bash tests/run-in-docker.sh 24.04 smoke
 
   report:
-    needs: [shellcheck, manifest-coverage]
+    needs: [regressions, current-lts-smoke]
     if: always()
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/github-script@v7
         with:
           script: |
             const label = 'nightly-health';
-            const failed = ${{ contains(needs.*.result, 'failure') }};
+            const results = Object.values(${{ toJSON(needs) }}).map(job => job.result);
+            const failed = results.some(result => result !== 'success');
+            const counts = results.reduce((outcome, result) => {
+              outcome[result] = (outcome[result] || 0) + 1;
+              return outcome;
+            }, {});
+            const countText = Object.entries(counts).map(([key, value]) => `${key}: ${value}`).join(', ');
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const today = new Date().toISOString().slice(0, 10);
 
@@ -62,7 +72,7 @@ jobs:
             const existing = open[0];
 
             if (failed) {
-              const body = `Nightly health run failed on ${today}.\n\nRun: ${runUrl}`;
+              const body = `Nightly health run failed on ${today}.\n\nJobs: ${countText}\nRun: ${runUrl}`;
               if (existing) {
                 await github.rest.issues.createComment({
                   ...context.repo,
@@ -81,7 +91,7 @@ jobs:
               await github.rest.issues.createComment({
                 ...context.repo,
                 issue_number: existing.number,
-                body: `Nightly health recovered on ${today}.\n\nRun: ${runUrl}`,
+                body: `Nightly health recovered on ${today}.\n\nJobs: ${countText}\nRun: ${runUrl}`,
               });
               await github.rest.issues.update({
                 ...context.repo,

@@ -13,8 +13,11 @@ if ! command -v shellcheck >/dev/null 2>&1; then
     exit 1
 fi
 
-echo "🔍 Running shellcheck on all .sh files..."
-mapfile -t files < <(find . -name '*.sh' -not -path './.git/*' | sort)
+echo "🔍 Running shellcheck on all shell files..."
+mapfile -t files < <(find . \( -name '*.sh' -o -name '*.bash' \) \
+    -not -path './.git/*' \
+    -not -path './.omx/*' \
+    -not -path './dist/*' | sort)
 echo "  found ${#files[@]} scripts"
 
 fail=0
