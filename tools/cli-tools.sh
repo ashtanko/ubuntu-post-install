@@ -11,6 +11,9 @@ CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
 # shellcheck source=lib/config.bash
 source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
 load_config "$REPO_ROOT"
+GITHUB_HELPER="$REPO_ROOT/lib/github.bash"
+# shellcheck source=lib/github.bash
+source "$GITHUB_HELPER" || { echo "❌ Missing github helper: $GITHUB_HELPER" >&2; exit 1; }
 
 echo "🚀 Installing CLI developer tools..."
 
@@ -49,8 +52,7 @@ else
         arm64) EZA_ARCH="aarch64" ;;
         *)     EZA_ARCH="$ARCH" ;;
     esac
-    EZA_VERSION=$(curl -fsSL https://api.github.com/repos/eza-community/eza/releases/latest \
-        | grep '"tag_name"' | cut -d'"' -f4)
+    EZA_VERSION=$(latest_github_tag eza-community/eza)
     EZA_URL="https://github.com/eza-community/eza/releases/download/${EZA_VERSION}/eza_${EZA_ARCH}-unknown-linux-musl.tar.gz"
     TMP=$(mktemp -d)
     trap 'rm -rf "$TMP"' EXIT

@@ -11,6 +11,9 @@ CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
 # shellcheck source=lib/config.bash
 source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
 load_config "$REPO_ROOT"
+GITHUB_HELPER="$REPO_ROOT/lib/github.bash"
+# shellcheck source=lib/github.bash
+source "$GITHUB_HELPER" || { echo "❌ Missing github helper: $GITHUB_HELPER" >&2; exit 1; }
 
 echo "🚀 Installing Node.js via NVM..."
 
@@ -23,8 +26,7 @@ if [ -d "$NVM_DIR" ]; then
     echo "✅ NVM already installed"
 else
     echo "📦 Fetching latest NVM version..."
-    NVM_VERSION=$(curl -fsSL https://api.github.com/repos/nvm-sh/nvm/releases/latest \
-        | grep '"tag_name"' | cut -d'"' -f4)
+    NVM_VERSION=$(latest_github_tag nvm-sh/nvm)
     echo "📥 Installing NVM $NVM_VERSION..."
     curl -fsSL "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" | bash
 fi

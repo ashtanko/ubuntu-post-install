@@ -11,6 +11,9 @@ CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
 # shellcheck source=lib/config.bash
 source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
 load_config "$REPO_ROOT"
+GITHUB_HELPER="$REPO_ROOT/lib/github.bash"
+# shellcheck source=lib/github.bash
+source "$GITHUB_HELPER" || { echo "❌ Missing github helper: $GITHUB_HELPER" >&2; exit 1; }
 
 echo "🚀 Installing developer Nerd Fonts..."
 
@@ -25,8 +28,7 @@ FONTS_DIR="$HOME/.local/share/fonts"
 mkdir -p "$FONTS_DIR"
 
 # Fetch latest nerd-fonts release tag once
-NERD_VERSION=$(curl -fsSL https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest \
-    | grep '"tag_name"' | cut -d'"' -f4)
+NERD_VERSION=$(latest_github_tag ryanoasis/nerd-fonts)
 echo "📋 Nerd Fonts version: $NERD_VERSION"
 
 install_nerd_font() {

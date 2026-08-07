@@ -210,6 +210,13 @@ exit 0
 EOF
     cat > "$bin/curl" <<'EOF'
 #!/bin/bash
+# Models `curl -fsSLI -o /dev/null -w '%{url_effective}' <repo>/releases/latest`,
+# which is how release tags are resolved now that api.github.com is avoided.
+for arg in "$@"; do
+    case "$arg" in
+        */releases/latest) echo "${arg%/latest}/tag/v-test"; exit 0 ;;
+    esac
+done
 echo '{"tag_name":"v-test"}'
 EOF
     cat > "$bin/wget" <<'EOF'

@@ -11,6 +11,9 @@ CONFIG_HELPER="$REPO_ROOT/lib/config.bash"
 # shellcheck source=lib/config.bash
 source "$CONFIG_HELPER" || { echo "❌ Missing config helper: $CONFIG_HELPER" >&2; exit 1; }
 load_config "$REPO_ROOT"
+GITHUB_HELPER="$REPO_ROOT/lib/github.bash"
+# shellcheck source=lib/github.bash
+source "$GITHUB_HELPER" || { echo "❌ Missing github helper: $GITHUB_HELPER" >&2; exit 1; }
 
 echo "🚀 Installing latest Neovim from official GitHub release..."
 
@@ -54,8 +57,7 @@ fi
 echo "🔍 Resolving latest Neovim release..."
 NVIM_VERSION="${NVIM_VERSION:-}"
 if [ -z "$NVIM_VERSION" ]; then
-    NVIM_VERSION=$(curl -fsSL https://api.github.com/repos/neovim/neovim/releases/latest \
-        | grep '"tag_name"' | cut -d'"' -f4)
+    NVIM_VERSION=$(latest_github_tag neovim/neovim)
 fi
 echo "📥 Neovim $NVIM_VERSION"
 
@@ -82,19 +84,32 @@ cleanup() {
 trap cleanup EXIT
 wget -q --show-progress -O "$TMP/nvim.tar.gz" "$URL"
 
-# Official release archives publish a neighboring sha256sum asset. Custom test
-# or mirror URLs may instead provide NVIM_ARCHIVE_SHA256 directly.
+# A custom mirror is untrusted, so it must always declare its digest.
 EXPECTED_SHA="${NVIM_ARCHIVE_SHA256:-}"
-if [ -z "$EXPECTED_SHA" ] && [ -z "${NVIM_ARCHIVE_URL:-}" ]; then
-    wget -q -O "$TMP/nvim.tar.gz.sha256sum" "${URL}.sha256sum"
-    EXPECTED_SHA=$(awk '{print $1}' "$TMP/nvim.tar.gz.sha256sum")
+if [ -z "$EXPECTED_SHA" ] && [ -n "${NVIM_ARCHIVE_URL:-}" ]; then
+    echo "❌ A custom Neovim archive requires NVIM_ARCHIVE_SHA256"
+    exit 1
 fi
+
+# Upstream's checksum publishing has moved around: v0.10.x shipped a per-asset
+# <asset>.sha256sum, v0.11.0 shipped an aggregate shasum.txt, and v0.11.4 and
+# later publish neither. Try both locations and verify whenever upstream gives
+# us something to verify against.
+if [ -z "$EXPECTED_SHA" ]; then
+    RELEASE_BASE="${URL%/*}"
+    if wget -q -O "$TMP/asset.sha256sum" "${URL}.sha256sum"; then
+        EXPECTED_SHA=$(awk 'NR==1 {print $1}' "$TMP/asset.sha256sum")
+    elif wget -q -O "$TMP/shasum.txt" "${RELEASE_BASE}/shasum.txt"; then
+        EXPECTED_SHA=$(awk -v want="$ASSET" '$2 == want || $2 == "*" want {print $1; exit}' "$TMP/shasum.txt")
+    fi
+fi
+
 if [ -n "$EXPECTED_SHA" ]; then
     echo "$EXPECTED_SHA  $TMP/nvim.tar.gz" | sha256sum --check --quiet
     echo "✅ Checksum verified"
 else
-    echo "❌ A custom Neovim archive requires NVIM_ARCHIVE_SHA256"
-    exit 1
+    echo "⚠️  Neovim $NVIM_VERSION publishes no checksum asset — cannot verify the download"
+    echo "   Fetched over TLS from github.com; set NVIM_ARCHIVE_SHA256 to enforce a digest."
 fi
 
 # Build and validate away from the destination, then replace it atomically.
