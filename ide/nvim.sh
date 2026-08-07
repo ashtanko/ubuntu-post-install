@@ -23,10 +23,21 @@ if command -v nvim &>/dev/null; then
     exit 0
 fi
 
+# Resolve the newest release tag of a GitHub repo without calling api.github.com —
+# unauthenticated API calls are rate-limited per IP and start returning 403 in CI.
+# Follows the /releases/latest redirect and reads the tag back out of the URL.
+latest_github_tag() {
+    local repo="$1" url
+    url=$(curl -fsSLI --retry 3 --retry-all-errors -o /dev/null -w '%{url_effective}' "https://github.com/${repo}/releases/latest")
+    case "$url" in
+        */releases/tag/*) printf '%s\n' "${url##*/releases/tag/}" ;;
+        *) echo "❌ Could not resolve latest release for $repo" >&2; return 1 ;;
+    esac
+}
+
 # Resolve latest release tag
 echo "🔍 Resolving latest Neovim release..."
-NVIM_VERSION=$(curl -fsSL https://api.github.com/repos/neovim/neovim/releases/latest \
-    | grep '"tag_name"' | cut -d'"' -f4)
+NVIM_VERSION=$(latest_github_tag neovim/neovim)
 echo "📥 Neovim $NVIM_VERSION"
 
 # Pick correct asset for arch (Neovim ships nvim-linux-x86_64 / nvim-linux-arm64)

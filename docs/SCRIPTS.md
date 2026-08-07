@@ -50,6 +50,10 @@ Language runtimes and SDKs.
 | [python.sh](../dev/python.sh) | Python 3 + pyenv + pipx + poetry |
 | [rust.sh](../dev/rust.sh) | Rust toolchain via rustup |
 | [go.sh](../dev/go.sh) | Latest Go SDK — version detection with fallback (VERSION endpoint → JSON) |
+| [databases.sh](../dev/databases.sh) | PostgreSQL, MySQL, Redis, SQLite CLI clients + pgcli/mycli/litecli (interactive shells via pipx) |
+| [kubernetes.sh](../dev/kubernetes.sh) | kubectl + helm + k9s + kind + kustomize |
+| [aws-cli.sh](../dev/aws-cli.sh) | AWS CLI v2 (official zip) + Session Manager plugin |
+| [terraform.sh](../dev/terraform.sh) | Terraform (HashiCorp apt repo) + tflint + tfsec |
 
 ## tools/
 
@@ -60,6 +64,7 @@ Shell, CLI, and dev helpers.
 | [zsh.sh](../tools/zsh.sh) | Zsh + Oh My Zsh; set `INSTALL_OH_MY_ZSH=no` to skip OMZ |
 | [claude.sh](../tools/claude.sh) | Claude Code CLI (installs Node via verified NodeSource repo if missing) |
 | [cli-tools.sh](../tools/cli-tools.sh) | bat, fzf, ripgrep, eza, jq, htop, tmux, tree, gh (GitHub CLI) |
+| [modern-cli.sh](../tools/modern-cli.sh) | lazygit, delta, zoxide, btop, direnv, fd, dust, hyperfine, tldr (tealdeer) |
 | [fonts.sh](../tools/fonts.sh) | JetBrains Mono, Fira Code, Hack — all Nerd Font variants |
 | [git-config.sh](../tools/git-config.sh) | Opinionated git defaults (rebase pull, autosetup, aliases, global gitignore, optional GPG signing) |
 | [pre-commit-setup.sh](../tools/pre-commit-setup.sh) | pre-commit framework via pipx + git template hook + starter `.pre-commit-config.yaml` |
