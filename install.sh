@@ -46,20 +46,30 @@ is_semver() {
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
+# Deliberately avoids api.github.com: unauthenticated calls are rate-limited to
+# 60/hour per IP, so a curl-to-bash install run from a shared IP (CI, corporate
+# NAT, cloud VM) can start getting 403s. The /releases/latest redirect carries
+# the same tag and isn't rate-limited that way — same approach as
+# lib/github.bash's latest_github_tag, used by every other script in the repo.
 resolve_latest_tag() {
-    local api="https://api.github.com/repos/${REPO}/releases/latest"
-    local auth=()
-    [[ -n "${GITHUB_TOKEN:-}" ]] && auth=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
-    curl -fsSL "${auth[@]}" "$api" \
-        | grep -m1 '"tag_name"' \
-        | sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/'
+    local url
+    url=$(curl -fsSLI --retry 3 --retry-all-errors -o /dev/null \
+        -w '%{url_effective}' "https://github.com/${REPO}/releases/latest") || return 1
+    case "$url" in
+        */releases/tag/*) printf '%s\n' "${url##*/releases/tag/}" ;;
+        *) return 1 ;;
+    esac
 }
 
 TAG="${VERSION:-}"
 if [[ -z "$TAG" ]]; then
     info "Resolving latest release..."
-    TAG="$(resolve_latest_tag)"
-    [[ -z "$TAG" ]] && { fail "could not resolve latest release tag for $REPO"; exit 1; }
+    # `if !` (not a bare assignment) so a failed lookup falls through to the
+    # error message below instead of triggering `set -e` silently.
+    if ! TAG="$(resolve_latest_tag)"; then
+        fail "could not resolve latest release tag for $REPO"
+        exit 1
+    fi
 fi
 
 # Accept v1.2.3 or 1.2.3
@@ -77,8 +87,8 @@ BASE_URL="${BASE_URL%/}"
 info "Installing ubuntu-post-install ${TAG}"
 info "Source: ${BASE_URL}"
 
-curl -fsSL -o "$TMP/$TARBALL"   "$BASE_URL/$TARBALL"
-curl -fsSL -o "$TMP/SHA256SUMS" "$BASE_URL/SHA256SUMS"
+curl -fsSL --retry 3 --retry-all-errors -o "$TMP/$TARBALL"   "$BASE_URL/$TARBALL"
+curl -fsSL --retry 3 --retry-all-errors -o "$TMP/SHA256SUMS" "$BASE_URL/SHA256SUMS"
 
 mapfile -t TARBALL_CHECKSUMS < <(awk -v name="$TARBALL" '$2 == name { print $1 }' "$TMP/SHA256SUMS")
 if [ "${#TARBALL_CHECKSUMS[@]}" -ne 1 ] \

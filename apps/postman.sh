@@ -37,7 +37,7 @@ sudo apt-get install -y curl tar
 echo "🔍 Downloading Postman ($ARCH)..."
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
-curl -fL --progress-bar -o "$TMP/postman.tar.gz" \
+curl -fL --progress-bar --retry 3 --retry-all-errors -o "$TMP/postman.tar.gz" \
     "https://dl.pstmn.io/download/latest/$ARCH"
 
 mkdir -p "$INSTALL_DIR"

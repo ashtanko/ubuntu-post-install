@@ -28,7 +28,13 @@ else
     echo "📦 Fetching latest NVM version..."
     NVM_VERSION=$(latest_github_tag nvm-sh/nvm)
     echo "📥 Installing NVM $NVM_VERSION..."
-    curl -fsSL "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" | bash
+    NVM_INSTALLER=$(mktemp)
+    trap 'rm -f "$NVM_INSTALLER"' EXIT
+    curl -fsSL --retry 3 --retry-all-errors -o "$NVM_INSTALLER" \
+        "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh"
+    bash "$NVM_INSTALLER"
+    rm -f "$NVM_INSTALLER"
+    trap - EXIT
 fi
 
 # Load NVM into current session.

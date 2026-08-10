@@ -82,7 +82,7 @@ cleanup() {
     fi
 }
 trap cleanup EXIT
-wget -q --show-progress -O "$TMP/nvim.tar.gz" "$URL"
+wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP/nvim.tar.gz" "$URL"
 
 # A custom mirror is untrusted, so it must always declare its digest.
 EXPECTED_SHA="${NVIM_ARCHIVE_SHA256:-}"
@@ -97,9 +97,9 @@ fi
 # us something to verify against.
 if [ -z "$EXPECTED_SHA" ]; then
     RELEASE_BASE="${URL%/*}"
-    if wget -q -O "$TMP/asset.sha256sum" "${URL}.sha256sum"; then
+    if wget --tries=3 --waitretry=2 -q -O "$TMP/asset.sha256sum" "${URL}.sha256sum"; then
         EXPECTED_SHA=$(awk 'NR==1 {print $1}' "$TMP/asset.sha256sum")
-    elif wget -q -O "$TMP/shasum.txt" "${RELEASE_BASE}/shasum.txt"; then
+    elif wget --tries=3 --waitretry=2 -q -O "$TMP/shasum.txt" "${RELEASE_BASE}/shasum.txt"; then
         EXPECTED_SHA=$(awk -v want="$ASSET" '$2 == want || $2 == "*" want {print $1; exit}' "$TMP/shasum.txt")
     fi
 fi

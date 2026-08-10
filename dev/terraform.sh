@@ -102,7 +102,7 @@ else
     TMP=$(mktemp)
     # shellcheck disable=SC2064
     trap "rm -f '$TMP'" EXIT
-    wget -q --show-progress -O "$TMP" "$TFSEC_URL"
+    wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP" "$TFSEC_URL"
     sudo install -m 0755 "$TMP" "$BIN_DIR/tfsec"
     echo "✅ tfsec installed → $BIN_DIR/tfsec"
 fi

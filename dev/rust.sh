@@ -22,7 +22,13 @@ if echo "$RUSTC_VERSION" | grep -q "^rustc "; then
 fi
 
 echo "📥 Downloading and running rustup installer..."
-curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs | sh -s -- -y
+RUSTUP_INSTALLER=$(mktemp)
+trap 'rm -f "$RUSTUP_INSTALLER"' EXIT
+curl --proto '=https' --tlsv1.2 -fsSL --retry 3 --retry-all-errors \
+    -o "$RUSTUP_INSTALLER" https://sh.rustup.rs
+sh "$RUSTUP_INSTALLER" -y
+rm -f "$RUSTUP_INSTALLER"
+trap - EXIT
 
 # Load cargo into current session
 # shellcheck source=/dev/null

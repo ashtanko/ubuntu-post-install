@@ -32,7 +32,7 @@ trap 'rm -f "$GPG_TMP"' EXIT
 echo "📦 Adding Warp GPG key and repository..."
 sudo apt-get install -y wget gpg
 
-wget -qO- https://releases.warp.dev/linux/keys/warp.asc | gpg --dearmor > "$GPG_TMP"
+wget --tries=3 --waitretry=2 -qO- https://releases.warp.dev/linux/keys/warp.asc | gpg --dearmor > "$GPG_TMP"
 sudo install -D -o root -g root -m 644 "$GPG_TMP" /etc/apt/keyrings/warpdotdev.gpg
 
 sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/warpdotdev.gpg] https://releases.warp.dev/linux/deb stable main" \

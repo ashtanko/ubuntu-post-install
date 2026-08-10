@@ -23,10 +23,15 @@ else
     sudo apt-get install -y curl
 
     echo "📦 Downloading and running official NordVPN installer..."
-    # Process substitution (not `curl | sh`) so apt's "Y/n" prompt can read
-    # from the terminal — piping makes stdin the closed curl pipe and apt
-    # sees EOF and aborts. Matches the form in NordVPN's official docs.
-    sh <(curl -sSf https://downloads.nordcdn.com/apps/linux/install.sh)
+    # Execute from a completed file so retries cannot duplicate streamed input,
+    # while leaving stdin attached to the terminal for apt's "Y/n" prompt.
+    NORD_INSTALLER=$(mktemp)
+    trap 'rm -f "$NORD_INSTALLER"' EXIT
+    curl -sSf --retry 3 --retry-all-errors -o "$NORD_INSTALLER" \
+        https://downloads.nordcdn.com/apps/linux/install.sh
+    sh "$NORD_INSTALLER"
+    rm -f "$NORD_INSTALLER"
+    trap - EXIT
 
     if ! command -v nordvpn >/dev/null 2>&1; then
         echo "❌ NordVPN installation failed or 'nordvpn' is not in PATH"

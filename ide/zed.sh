@@ -21,7 +21,12 @@ if [[ -f "$ZED_BIN" ]] && "$ZED_BIN" --version 2>/dev/null | grep -qi "zed"; the
 fi
 
 echo "📦 Installing Zed (preview channel) via official install script..."
-curl -f https://zed.dev/install.sh | ZED_CHANNEL=preview sh
+ZED_INSTALLER=$(mktemp)
+trap 'rm -f "$ZED_INSTALLER"' EXIT
+curl -fsSL --retry 3 --retry-all-errors -o "$ZED_INSTALLER" https://zed.dev/install.sh
+ZED_CHANNEL=preview sh "$ZED_INSTALLER"
+rm -f "$ZED_INSTALLER"
+trap - EXIT
 
 if [ -f "$ZED_BIN" ]; then
     echo "✅ Zed installed successfully!"

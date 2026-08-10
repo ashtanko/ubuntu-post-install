@@ -42,8 +42,13 @@ else
     INSTALL_OMZ="${INSTALL_OH_MY_ZSH:-yes}"
     if [ "$INSTALL_OMZ" != "no" ]; then
         echo "✨ Installing Oh My Zsh..."
-        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
-            "" --unattended
+        OMZ_INSTALLER=$(mktemp)
+        trap 'rm -f "$OMZ_INSTALLER"' EXIT
+        curl -fsSL --retry 3 --retry-all-errors -o "$OMZ_INSTALLER" \
+            https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+        sh "$OMZ_INSTALLER" --unattended
+        rm -f "$OMZ_INSTALLER"
+        trap - EXIT
         echo "✅ Oh My Zsh installed"
     else
         echo "⏭️  Skipping Oh My Zsh (INSTALL_OH_MY_ZSH=no)"

@@ -28,7 +28,12 @@ if ! command -v zstd &>/dev/null; then
 fi
 
 echo "📦 Downloading and running official Ollama installer..."
-curl -fsSL https://ollama.com/install.sh | sh
+OLLAMA_INSTALLER=$(mktemp)
+trap 'rm -f "$OLLAMA_INSTALLER"' EXIT
+curl -fsSL --retry 3 --retry-all-errors -o "$OLLAMA_INSTALLER" https://ollama.com/install.sh
+sh "$OLLAMA_INSTALLER"
+rm -f "$OLLAMA_INSTALLER"
+trap - EXIT
 
 if ! command -v ollama &>/dev/null; then
     echo "❌ Installation failed or 'ollama' is not in PATH"

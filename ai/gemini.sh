@@ -31,7 +31,7 @@ else
 
     sudo apt-get install -y wget gpg ca-certificates
 
-    wget -qO- https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+    wget --tries=3 --waitretry=2 -qO- https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
         | gpg --dearmor > "$GPG_TMP"
     sudo install -D -o root -g root -m 644 "$GPG_TMP" /etc/apt/keyrings/nodesource.gpg
 

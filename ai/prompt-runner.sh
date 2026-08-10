@@ -101,7 +101,7 @@ case "$BACKEND" in
         ;;
     anthropic)
         : "${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY not set in environment or configuration}"
-        : "${MODEL:=claude-opus-4-7}"
+        : "${MODEL:=claude-opus-5}"
         curl -fsSL https://api.anthropic.com/v1/messages \
             -H "x-api-key: $ANTHROPIC_API_KEY" \
             -H "anthropic-version: 2023-06-01" \

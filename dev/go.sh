@@ -33,22 +33,31 @@ fi
 # first entry where stable=true.
 echo "🔍 Fetching latest Go version..."
 GO_VERSION="${GO_VERSION:-}"
+GO_VERSION_METADATA=$(mktemp)
+trap 'rm -f "$GO_VERSION_METADATA"' EXIT
 if [ -z "$GO_VERSION" ]; then
-    GO_VERSION=$(curl -fsSL "https://go.dev/VERSION?m=text" 2>/dev/null | head -1 || true)
+    if curl -fsSL --retry 3 --retry-all-errors -o "$GO_VERSION_METADATA" \
+        "https://go.dev/VERSION?m=text" 2>/dev/null; then
+        GO_VERSION=$(head -1 "$GO_VERSION_METADATA" || true)
+    fi
 fi
 
 if [[ ! "$GO_VERSION" =~ ^go[0-9] ]]; then
     echo "⚠️  Primary version endpoint returned unexpected output — falling back to dl/?mode=json"
-    GO_VERSION=$(curl -fsSL "https://go.dev/dl/?mode=json" \
-        | python3 -c "
+    if curl -fsSL --retry 3 --retry-all-errors -o "$GO_VERSION_METADATA" \
+        "https://go.dev/dl/?mode=json"; then
+        GO_VERSION=$(python3 -c "
 import sys, json
 data = json.load(sys.stdin)
 for r in data:
     if r.get('stable'):
         print(r['version'])
         sys.exit(0)
-" || true)
+" < "$GO_VERSION_METADATA" || true)
+    fi
 fi
+rm -f "$GO_VERSION_METADATA"
+trap - EXIT
 
 if [[ ! "$GO_VERSION" =~ ^go[0-9] ]]; then
     echo "❌ Could not determine the latest Go version from go.dev"
@@ -65,14 +74,16 @@ echo "📦 Downloading $TARBALL..."
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-wget -q --show-progress -O "$TMP/$TARBALL" "$URL"
+wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP/$TARBALL" "$URL"
 
 # Verify checksum
 echo "🔒 Verifying checksum..."
 EXPECTED_SHA="${GO_ARCHIVE_SHA256:-}"
 if [ -z "$EXPECTED_SHA" ] && [ -z "${GO_ARCHIVE_URL:-}" ]; then
-    EXPECTED_SHA=$(curl -fsSL "https://go.dev/dl/?mode=json" \
-        | python3 -c "
+    GO_RELEASES_JSON="$TMP/go-releases.json"
+    curl -fsSL --retry 3 --retry-all-errors -o "$GO_RELEASES_JSON" \
+        "https://go.dev/dl/?mode=json"
+    EXPECTED_SHA=$(python3 -c "
 import sys, json
 data = json.load(sys.stdin)
 for release in data:
@@ -80,7 +91,7 @@ for release in data:
         if f['filename'] == '${TARBALL}':
             print(f['sha256'])
             sys.exit(0)
-")
+" < "$GO_RELEASES_JSON")
 fi
 
 if [ -n "$EXPECTED_SHA" ]; then

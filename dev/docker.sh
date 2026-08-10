@@ -26,8 +26,13 @@ else
     sudo apt-get install -y ca-certificates curl gnupg lsb-release
 
     sudo install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
-        | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    DOCKER_KEY=$(mktemp)
+    trap 'rm -f "$DOCKER_KEY"' EXIT
+    curl -fsSL --retry 3 --retry-all-errors -o "$DOCKER_KEY" \
+        https://download.docker.com/linux/ubuntu/gpg
+    sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg "$DOCKER_KEY"
+    rm -f "$DOCKER_KEY"
+    trap - EXIT
     sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
     echo "deb [arch=${ARCH} signed-by=/etc/apt/keyrings/docker.gpg] \
@@ -63,7 +68,7 @@ else
     DEB=$(mktemp --suffix=.deb)
     trap 'rm -f "$DEB"' EXIT
 
-    wget -q --show-progress \
+    wget --tries=3 --waitretry=2 -q --show-progress \
         -O "$DEB" \
         "https://desktop.docker.com/linux/main/${ARCH}/docker-desktop-${ARCH}.deb"
 

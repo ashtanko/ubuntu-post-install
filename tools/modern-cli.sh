@@ -19,8 +19,8 @@ echo "🚀 Installing modern CLI productivity extras..."
 
 ARCH=$(dpkg --print-architecture)
 case "$ARCH" in
-    amd64) GO_ARCH="amd64"; RUST_ARCH="x86_64"; LAZYGIT_ARCH="x86_64" ;;
-    arm64) GO_ARCH="arm64"; RUST_ARCH="aarch64"; LAZYGIT_ARCH="arm64" ;;
+    amd64) RUST_ARCH="x86_64"; LAZYGIT_ARCH="x86_64" ;;
+    arm64) RUST_ARCH="aarch64"; LAZYGIT_ARCH="arm64" ;;
     *) echo "❌ Unsupported architecture: $ARCH"; exit 1 ;;
 esac
 
@@ -58,7 +58,7 @@ else
     DELTA_URL="https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta-musl_${DELTA_VERSION}_${ARCH}.deb"
     DEB=$(mktemp --suffix=.deb)
     trap 'rm -f "$DEB"' EXIT
-    wget -q --show-progress -O "$DEB" "$DELTA_URL"
+    wget --tries=3 --waitretry=2 -q --show-progress -O "$DEB" "$DELTA_URL"
     sudo apt-get install -y "$DEB"
     echo "✅ delta installed"
 fi
@@ -77,11 +77,23 @@ else
     echo "🔍 Resolving latest lazygit release..."
     LG_VERSION=$(latest_github_tag jesseduffield/lazygit)
     LG_NUM=${LG_VERSION#v}
-    LG_URL="https://github.com/jesseduffield/lazygit/releases/download/${LG_VERSION}/lazygit_${LG_NUM}_Linux_${LAZYGIT_ARCH}.tar.gz"
+    LG_ASSET="lazygit_${LG_NUM}_linux_${LAZYGIT_ARCH}.tar.gz"
+    LG_URL="https://github.com/jesseduffield/lazygit/releases/download/${LG_VERSION}/${LG_ASSET}"
     echo "📦 Downloading lazygit $LG_VERSION..."
     TMP=$(mktemp -d)
     trap 'rm -rf "$TMP"' EXIT
-    wget -q --show-progress -O "$TMP/lazygit.tar.gz" "$LG_URL"
+    wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP/lazygit.tar.gz" "$LG_URL"
+
+    echo "🔒 Verifying checksum..."
+    LG_CHECKSUMS="$TMP/checksums.txt"
+    curl -fsSL --retry 3 --retry-all-errors -o "$LG_CHECKSUMS" \
+        "https://github.com/jesseduffield/lazygit/releases/download/${LG_VERSION}/checksums.txt"
+    EXPECTED_SHA=$(awk -v want="$LG_ASSET" '$2 == want {print $1; exit}' "$LG_CHECKSUMS")
+    [[ "$EXPECTED_SHA" =~ ^[0-9a-fA-F]{64}$ ]] \
+        || { echo "❌ lazygit checksum manifest is missing a valid digest for $LG_ASSET"; exit 1; }
+    echo "$EXPECTED_SHA  $TMP/lazygit.tar.gz" | sha256sum --check --quiet
+    echo "✅ Checksum verified"
+
     tar -xzf "$TMP/lazygit.tar.gz" -C "$TMP"
     sudo install -m 0755 "$TMP/lazygit" "$BIN_DIR/lazygit"
     echo "✅ lazygit installed → $BIN_DIR/lazygit"
@@ -103,10 +115,12 @@ else
     DUST_VERSION=$(latest_github_tag bootandy/dust)
     DUST_URL="https://github.com/bootandy/dust/releases/download/${DUST_VERSION}/dust-${DUST_VERSION}-${RUST_ARCH}-unknown-linux-gnu.tar.gz"
     echo "📦 Downloading dust $DUST_VERSION..."
+    # dust publishes no checksum asset to verify against (fetched over TLS from
+    # github.com); retry protects against a dropped connection, not tampering.
     TMP_D=$(mktemp -d)
     # shellcheck disable=SC2064
     trap "rm -rf '$TMP_D'" EXIT
-    wget -q --show-progress -O "$TMP_D/dust.tar.gz" "$DUST_URL"
+    wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP_D/dust.tar.gz" "$DUST_URL"
     tar -xzf "$TMP_D/dust.tar.gz" -C "$TMP_D" --strip-components=1
     sudo install -m 0755 "$TMP_D/dust" "$BIN_DIR/dust"
     echo "✅ dust installed → $BIN_DIR/dust"
@@ -118,12 +132,23 @@ if command -v tldr &>/dev/null; then
 else
     echo "🔍 Resolving latest tealdeer release..."
     TLDR_VERSION=$(latest_github_tag tealdeer-rs/tealdeer)
-    TLDR_URL="https://github.com/tealdeer-rs/tealdeer/releases/download/${TLDR_VERSION}/tealdeer-linux-${RUST_ARCH}-musl"
+    TLDR_ASSET="tealdeer-linux-${RUST_ARCH}-musl"
+    TLDR_URL="https://github.com/tealdeer-rs/tealdeer/releases/download/${TLDR_VERSION}/${TLDR_ASSET}"
     echo "📦 Downloading tealdeer $TLDR_VERSION..."
     TMP_T=$(mktemp)
+    TLDR_CHECKSUMS="${TMP_T}.sha256"
     # shellcheck disable=SC2064
-    trap "rm -f '$TMP_T'" EXIT
-    wget -q --show-progress -O "$TMP_T" "$TLDR_URL"
+    trap "rm -f '$TMP_T' '$TLDR_CHECKSUMS'" EXIT
+    wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP_T" "$TLDR_URL"
+
+    echo "🔒 Verifying checksum..."
+    curl -fsSL --retry 3 --retry-all-errors -o "$TLDR_CHECKSUMS" "${TLDR_URL}.sha256"
+    EXPECTED_SHA=$(awk 'NR==1 {print $1}' "$TLDR_CHECKSUMS")
+    [[ "$EXPECTED_SHA" =~ ^[0-9a-fA-F]{64}$ ]] \
+        || { echo "❌ tealdeer checksum manifest is missing a valid digest for $TLDR_ASSET"; exit 1; }
+    echo "$EXPECTED_SHA  $TMP_T" | sha256sum --check --quiet
+    echo "✅ Checksum verified"
+
     sudo install -m 0755 "$TMP_T" "$BIN_DIR/tldr"
     echo "✅ tldr installed → $BIN_DIR/tldr"
 fi
@@ -151,9 +176,6 @@ for RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
         echo "✅ Added zoxide init to $RC"
     fi
 done
-
-# Silence unused-variable warning for GO_ARCH (kept for future Go-style asset URLs)
-: "$GO_ARCH"
 
 echo ""
 echo "✅ Modern CLI extras installed!"

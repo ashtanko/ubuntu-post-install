@@ -51,6 +51,10 @@ The autostart block is the only piece this repo persists into your shell rc file
 
 Enables `unattended-upgrades` for the **security pocket only** (default Ubuntu policy). Set `ENABLE_AUTO_UPDATES=no` to skip.
 
+## Timezone auto-detection ([essentials/locale-timezone.sh](../essentials/locale-timezone.sh))
+
+If `TZ` is left unset in `.env`, the script asks [ipapi.co](https://ipapi.co) to geolocate your public IP so it can set the right timezone. That's one outbound request carrying your IP to a third party, made once per run (and only when `TZ` is empty). Set `TZ` explicitly (e.g. `TZ="America/New_York"`) to skip the lookup entirely.
+
 ## What gets written to your shell rc files
 
 Each block is appended to **both** `~/.zshrc` and `~/.bashrc` and guarded with `grep -q` so re-runs don't duplicate.

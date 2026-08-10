@@ -25,7 +25,12 @@ if [ -x "$OPENCODE_BIN" ] && "$OPENCODE_BIN" --version 2>/dev/null | grep -qi "o
 fi
 
 echo "📦 Downloading and running opencode installer..."
-curl -fsSL https://opencode.ai/install | bash
+OPENCODE_INSTALLER=$(mktemp)
+trap 'rm -f "$OPENCODE_INSTALLER"' EXIT
+curl -fsSL --retry 3 --retry-all-errors -o "$OPENCODE_INSTALLER" https://opencode.ai/install
+bash "$OPENCODE_INSTALLER"
+rm -f "$OPENCODE_INSTALLER"
+trap - EXIT
 
 if [ -x "$OPENCODE_BIN" ]; then
     echo "✅ opencode installed successfully!"

@@ -269,11 +269,145 @@ EOF
     assert_contains "$output" "Unknown backend: from-user-config"
 }
 
+test_failed_remote_installer_is_not_executed() {
+    local home="$TEST_TMP/failed-installer-home"
+    local bin="$TEST_TMP/failed-installer-bin"
+    local output="$TEST_TMP/failed-installer.out"
+    local status
+    mkdir -p "$home" "$bin"
+    cat > "$bin/curl" <<'EOF'
+#!/bin/bash
+payload='mkdir -p "$OPENCODE_INSTALL_DIR/bin"; printf "executed\n" > "$OPENCODE_INSTALL_DIR/bin/opencode"'
+out=""
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -o) out="$2"; shift 2 ;;
+        *) shift ;;
+    esac
+done
+if [ -n "$out" ]; then
+    printf '%s\n' "$payload" > "$out"
+else
+    printf '%s\n' "$payload"
+fi
+exit 18
+EOF
+    chmod +x "$bin/curl"
+
+    set +e
+    HOME="$home" PATH="$bin:/usr/bin:/bin" OPENCODE_INSTALL_DIR="$home/.opencode" \
+        /bin/bash "$REPO_ROOT/ai/opencode.sh" > "$output" 2>&1
+    status=$?
+    set -e
+
+    [ "$status" -ne 0 ] || fail "opencode accepted a failed installer download"
+    [ ! -e "$home/.opencode/bin/opencode" ] \
+        || fail "opencode executed content from a failed installer download"
+}
+
+test_cli_tools_preserves_user_bat_and_configures_path() {
+    local home="$TEST_TMP/cli-tools-home"
+    local bin="$TEST_TMP/cli-tools-bin"
+    local output="$TEST_TMP/cli-tools.out"
+    local cmd rc marker_count
+    mkdir -p "$home/.local/bin" "$bin"
+    printf 'user-owned-bat\n' > "$home/.local/bin/bat"
+    printf "   # \$HOME/.local/bin is intentionally not configured here\n" > "$home/.bashrc"
+    printf "   # \$HOME/.local/bin is intentionally not configured here\n" > "$home/.zshrc"
+
+    for cmd in batcat fzf rg jq htop tmux tree eza gh; do
+        ln -s /usr/bin/true "$bin/$cmd"
+    done
+    cat > "$bin/sudo" <<'EOF'
+#!/bin/bash
+exit 0
+EOF
+    chmod +x "$bin/sudo"
+
+    HOME="$home" PATH="$bin:/usr/bin:/bin" \
+        /bin/bash "$REPO_ROOT/tools/cli-tools.sh" > "$output" 2>&1
+    HOME="$home" PATH="$bin:/usr/bin:/bin" \
+        /bin/bash "$REPO_ROOT/tools/cli-tools.sh" >> "$output" 2>&1
+
+    [ ! -L "$home/.local/bin/bat" ] || fail "cli-tools replaced an unmanaged bat file"
+    [ "$(< "$home/.local/bin/bat")" = "user-owned-bat" ] \
+        || fail "cli-tools changed an unmanaged bat file"
+    for rc in "$home/.bashrc" "$home/.zshrc"; do
+        assert_contains "$rc" "export PATH=\"\$HOME/.local/bin:\$PATH\""
+        marker_count=$(grep -cF '# ~/.local/bin (added by cli-tools.sh)' "$rc")
+        [ "$marker_count" -eq 1 ] || fail "cli-tools PATH block was not idempotent in $rc"
+    done
+}
+
+test_modern_cli_requires_checksum() {
+    local home="$TEST_TMP/modern-checksum-home"
+    local bin="$TEST_TMP/modern-checksum-bin"
+    local log="$TEST_TMP/modern-checksum.log"
+    local output="$TEST_TMP/modern-checksum.out"
+    local cmd status
+    mkdir -p "$home" "$bin"
+
+    for cmd in btop direnv hyperfine delta fdfind lazygit zoxide dust; do
+        ln -s /usr/bin/true "$bin/$cmd"
+    done
+    cat > "$bin/sudo" <<'EOF'
+#!/bin/bash
+echo "$*" >> "$STUB_LOG"
+exit 0
+EOF
+    cat > "$bin/curl" <<'EOF'
+#!/bin/bash
+url=""
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -o|-w) shift 2 ;;
+        -*) shift ;;
+        *) url="$1"; shift ;;
+    esac
+done
+case "$url" in
+    */releases/latest)
+        printf '%s\n' "${url%/latest}/tag/v1.8.1"
+        exit 0
+        ;;
+    *.sha256) exit 22 ;;
+    *) exit 2 ;;
+esac
+EOF
+    cat > "$bin/wget" <<'EOF'
+#!/bin/bash
+out=""
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -O) out="$2"; shift 2 ;;
+        *) shift ;;
+    esac
+done
+[ -n "$out" ] || exit 2
+printf 'downloaded-binary\n' > "$out"
+EOF
+    chmod +x "$bin/sudo" "$bin/curl" "$bin/wget"
+
+    set +e
+    STUB_LOG="$log" HOME="$home" PATH="$bin:/usr/bin:/bin" \
+        /bin/bash "$REPO_ROOT/tools/modern-cli.sh" > "$output" 2>&1
+    status=$?
+    set -e
+
+    [ "$status" -ne 0 ] || fail "modern-cli accepted a missing tealdeer checksum"
+    if grep -q 'install .*tldr' "$log"; then
+        fail "modern-cli installed tealdeer after checksum retrieval failed"
+    fi
+}
+
 test_npm_installers
 test_architecture_guards
 test_system_info_optional_failure
 test_flutter_scope_and_status
 test_font_extraction
 test_prompt_runner_config
+test_failed_remote_installer_is_not_executed
+test_cli_tools_preserves_user_bat_and_configures_path
+test_modern_cli_requires_checksum
 
 echo "✅ Installer regression tests passed"

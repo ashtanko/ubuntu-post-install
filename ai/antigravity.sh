@@ -22,8 +22,13 @@ fi
 echo "📦 Adding Antigravity GPG key and repository..."
 sudo mkdir -p /etc/apt/keyrings
 
-curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | \
-    sudo gpg --dearmor --yes -o /etc/apt/keyrings/antigravity-repo-key.gpg
+ANTIGRAVITY_KEY=$(mktemp)
+trap 'rm -f "$ANTIGRAVITY_KEY"' EXIT
+curl -fsSL --retry 3 --retry-all-errors -o "$ANTIGRAVITY_KEY" \
+    https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg
+sudo gpg --dearmor --yes -o /etc/apt/keyrings/antigravity-repo-key.gpg "$ANTIGRAVITY_KEY"
+rm -f "$ANTIGRAVITY_KEY"
+trap - EXIT
 
 if [ ! -f /etc/apt/sources.list.d/antigravity.list ]; then
     echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] \

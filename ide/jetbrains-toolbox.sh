@@ -31,11 +31,16 @@ sudo apt install -y libfuse2 || sudo apt install -y libfuse2t64
 
 echo "🔍 Resolving latest JetBrains Toolbox download..."
 META_URL="https://data.services.jetbrains.com/products/releases?code=TBA&latest=true&type=release"
-DOWNLOAD_URL=$(curl -fsSL "$META_URL" | python3 -c "
+TOOLBOX_METADATA=$(mktemp)
+trap 'rm -f "$TOOLBOX_METADATA"' EXIT
+curl -fsSL --retry 3 --retry-all-errors -o "$TOOLBOX_METADATA" "$META_URL"
+DOWNLOAD_URL=$(python3 -c "
 import sys, json
 data = json.load(sys.stdin)
 print(data['TBA'][0]['downloads']['linux']['link'])
-")
+" < "$TOOLBOX_METADATA")
+rm -f "$TOOLBOX_METADATA"
+trap - EXIT
 
 if [ -z "$DOWNLOAD_URL" ]; then
     echo "❌ Could not resolve Toolbox download URL"
@@ -46,7 +51,7 @@ echo "📥 $DOWNLOAD_URL"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-wget -q --show-progress -O "$TMP/toolbox.tar.gz" "$DOWNLOAD_URL"
+wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP/toolbox.tar.gz" "$DOWNLOAD_URL"
 
 mkdir -p "$INSTALL_DIR"
 tar -xzf "$TMP/toolbox.tar.gz" -C "$INSTALL_DIR" --strip-components=1
