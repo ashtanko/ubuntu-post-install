@@ -16,16 +16,25 @@ SCRIPTS=(
   # essentials/
   "essentials/auto-updates.sh|no|||systemctl enable unattended-upgrades fails without systemd"
   "essentials/firewall.sh|no|||UFW needs kernel netfilter; rules don't apply inside a container"
+  "essentials/fstrim.sh|no|||no systemd in a plain container to manage fstrim.timer; ROTA detection works but has nothing to enable"
   "essentials/gnome-settings.sh|no|||requires active GNOME session (gsettings/dbus)"
+  "essentials/journald.sh|no|||no systemd-journald in a plain container; the drop-in would never take effect"
   "essentials/locale-timezone.sh|partial|TZ=Etc/UTC,LOCALE=en_US.UTF-8|[[ \$(locale -a) == *en_US.utf8* ]]|timedatectl needs systemd; locale-gen part works"
+  "essentials/motd-news.sh|no|||/etc/default/motd-news and motd-news.timer aren't present in the minimal container base image"
   "essentials/swap.sh|no|||needs real block device + /etc/fstab persistence"
+  "essentials/sysctl-limits.sh|partial||grep -q 'fs.inotify.max_user_watches=524288' /etc/sysctl.d/99-upi-inotify.conf \&\& grep -q 'soft nofile 1048576' /etc/security/limits.d/99-upi-nofile.conf|/proc/sys is read-only in an unprivileged container; sysctl -p no-ops but the drop-in files still land and are verified|/etc/sysctl.d/99-upi-inotify.conf,/etc/security/limits.d/99-upi-nofile.conf"
   "essentials/system-info.sh|yes||ls \$HOME/system-info-*.log >/dev/null|"
 
   # system/
   "system/base.sh|yes|GIT_NAME=CI Tester,GIT_EMAIL=ci@example.com|FILE||\$HOME/.gitconfig"
   "system/gpg.sh|partial|GIT_NAME=CI Tester,GIT_EMAIL=ci@example.com|[[ \$(gpg --list-secret-keys) == *ci@example.com* ]]|entropy slow; key generated but git signing config skipped if no rc|\$HOME/.gnupg,\$HOME/.gitconfig"
+  "system/hostname.sh|no|||hostnamectl/UTS namespace changes aren't meaningful inside a container"
+  "system/hosts-dns.sh|no|||requires systemd-resolved (resolvectl); not present in minimal containers"
   "system/keyboard.sh|no|||keyd daemon needs /dev/uinput + systemd"
+  "system/ntp.sh|partial||dpkg -s chrony &>/dev/null|systemd-timesyncd path needs systemd as PID 1; container run only exercises the chrony-install fallback"
   "system/ssh.sh|partial|GIT_EMAIL=ci@example.com|test -f \$HOME/.ssh/id_ed25519|may prompt for passphrase if interactive|\$HOME/.ssh"
+  "system/sudoers.sh|yes|SUDO_TIMESTAMP_TIMEOUT_MINUTES=15|sudo grep -q 'timestamp_timeout=15' /etc/sudoers.d/99-upi-timeout|"
+  "system/user-groups.sh|yes||grep -qw dialout <(sudo -u \$(id -un) id -nG) && grep -qw plugdev <(sudo -u \$(id -un) id -nG)|"
 
   # apps/
   "apps/browsers.sh|no|||Chrome installs but is GUI-only; not useful in CI"
@@ -50,7 +59,6 @@ SCRIPTS=(
   # tools/
   "tools/backup-home.sh|no|||interactive backup utility; not a setup script"
   "tools/btop.sh|yes||FILE|"
-  "tools/claude.sh|yes||command -v claude|"
   "tools/cli-tools.sh|yes||FILE|"
   "tools/fonts.sh|yes||test -n \"\$(find \$HOME/.local/share/fonts -type f -print -quit 2>/dev/null)\"||\$HOME/.local/share/fonts"
   "tools/git-config.sh|yes|GIT_NAME=CI Tester,GIT_EMAIL=ci@example.com|git config --global --get pull.rebase||\$HOME/.gitconfig,\$HOME/.config/git"
@@ -66,12 +74,27 @@ SCRIPTS=(
   "ide/zed.sh|no|||GUI editor"
 
   # ai/
+  "ai/aider.sh|yes||test -x \$HOME/.local/bin/aider && \$HOME/.local/bin/aider --version|"
   "ai/antigravity.sh|partial||command -v antigravity >/dev/null|requires Google APT; may not exist for all Ubuntu versions"
+  "ai/claude.sh|yes|CLAUDE_CHANNEL=stable|command -v claude && claude --version||/etc/apt/keyrings/claude-code.asc,/etc/apt/sources.list.d/claude-code.list"
+  "ai/cline.sh|yes|CLINE_VERSION=latest|command -v cline && cline --version|"
+  "ai/codex.sh|yes||test -x \$HOME/.local/bin/codex && \$HOME/.local/bin/codex --version||\$HOME/.codex/packages/standalone"
+  "ai/cursor-agent.sh|yes||test -x \$HOME/.local/bin/cursor-agent && \$HOME/.local/bin/cursor-agent --version||\$HOME/.local/share/cursor-agent"
+  "ai/fabric.sh|yes||test -x \$HOME/.local/bin/fabric && \$HOME/.local/bin/fabric --version|"
   "ai/gemini.sh|yes||bash -lc 'command -v gemini'|"
+  "ai/github-copilot.sh|yes||test -x \$HOME/.local/bin/copilot && \$HOME/.local/bin/copilot version|"
+  "ai/goose.sh|yes||test -x \$HOME/.local/bin/goose && \$HOME/.local/bin/goose --version|"
+  "ai/huggingface-cli.sh|yes||test -x \$HOME/.local/bin/hf && \$HOME/.local/bin/hf version||\$HOME/.hf-cli"
   "ai/llama-cpp.sh|no|||CMake build OOMs / takes too long in CI containers; verify on real hardware"
+  "ai/litellm.sh|yes|LITELLM_VERSION=latest|test -x \$HOME/.local/bin/litellm && \$HOME/.local/bin/litellm --help >/dev/null||\$HOME/.local/share/pipx/venvs/litellm"
+  "ai/llm-cli.sh|yes|LLM_VERSION=latest|test -x \$HOME/.local/bin/llm && \$HOME/.local/bin/llm --version||\$HOME/.local/share/pipx/venvs/llm"
+  "ai/mcp-inspector.sh|yes|MCP_INSPECTOR_VERSION=latest|command -v mcp-inspector && mcp-inspector --help >/dev/null|"
+  "ai/mistral-vibe.sh|yes||test -x \$HOME/.local/bin/vibe && \$HOME/.local/bin/vibe --version||\$HOME/.local/share/uv/tools/mistral-vibe"
+  "ai/ollama-models.sh|no|||downloads user-selected large models and requires a running Ollama service"
   "ai/ollama.sh|partial||command -v ollama|systemd service won't start; binary installs"
   "ai/opencode.sh|yes||test -x \$HOME/.opencode/bin/opencode||\$HOME/.opencode"
   "ai/prompt-runner.sh|yes||test -x \$HOME/.local/bin/prompt|"
+  "ai/qwen-code.sh|yes||if [ -x \$HOME/.local/bin/qwen ]; then true; else test -x \$HOME/.qwen/bin/qwen; fi||\$HOME/.qwen"
 
   # software/
   "software/boxes.sh|no|||GNOME Boxes needs KVM + display"

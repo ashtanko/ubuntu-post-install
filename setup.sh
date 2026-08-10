@@ -76,11 +76,20 @@ declare -a ESSENTIALS_ITEMS=(
     "Unattended security updates|essentials/auto-updates.sh"
     "Locale + timezone|essentials/locale-timezone.sh"
     "GNOME quality-of-life settings|essentials/gnome-settings.sh"
+    "Journal log size cap|essentials/journald.sh"
+    "SSD/NVMe periodic TRIM|essentials/fstrim.sh"
+    "Disable motd-news ads|essentials/motd-news.sh"
+    "inotify + open-file limits|essentials/sysctl-limits.sh"
     "System info dump|essentials/system-info.sh"
 )
 # shellcheck disable=SC2034
 declare -a SYSTEM_ITEMS=(
     "Base system (apt upgrade, build tools, git)|system/base.sh"
+    "Hostname|system/hostname.sh"
+    "User groups (docker, dialout, plugdev...)|system/user-groups.sh"
+    "Time sync (NTP)|system/ntp.sh"
+    "DNS resolvers (systemd-resolved)|system/hosts-dns.sh"
+    "Sudo timestamp timeout (opt-in)|system/sudoers.sh"
     "Keyboard remapping (keyd macOS-style)|system/keyboard.sh"
     "GPG key + git signing|system/gpg.sh"
     "SSH key generation|system/ssh.sh"
@@ -110,7 +119,6 @@ declare -a DEV_ITEMS=(
 # shellcheck disable=SC2034
 declare -a TOOLS_ITEMS=(
     "Zsh + Oh My Zsh|tools/zsh.sh"
-    "Claude Code CLI|tools/claude.sh"
     "CLI tools (bat, fzf, rg, eza, jq, gh...)|tools/cli-tools.sh"
     "Modern CLI extras (lazygit, delta, zoxide, btop...)|tools/modern-cli.sh"
     "btop (resource monitor)|tools/btop.sh"
@@ -130,8 +138,23 @@ declare -a IDE_ITEMS=(
 # shellcheck disable=SC2034
 declare -a AI_ITEMS=(
     "Ollama (local LLMs)|ai/ollama.sh"
+    "Ollama models (from .env)|ai/ollama-models.sh"
     "llama.cpp (build from source)|ai/llama-cpp.sh"
+    "Claude Code CLI|ai/claude.sh"
+    "OpenAI Codex CLI|ai/codex.sh"
     "Gemini CLI|ai/gemini.sh"
+    "GitHub Copilot CLI|ai/github-copilot.sh"
+    "Hugging Face CLI|ai/huggingface-cli.sh"
+    "Aider|ai/aider.sh"
+    "goose CLI|ai/goose.sh"
+    "Qwen Code|ai/qwen-code.sh"
+    "Cursor Agent CLI|ai/cursor-agent.sh"
+    "Mistral Vibe CLI|ai/mistral-vibe.sh"
+    "Cline CLI|ai/cline.sh"
+    "Fabric prompt workflows|ai/fabric.sh"
+    "LLM CLI (multi-provider)|ai/llm-cli.sh"
+    "LiteLLM proxy CLI|ai/litellm.sh"
+    "MCP Inspector|ai/mcp-inspector.sh"
     "Antigravity|ai/antigravity.sh"
     "opencode|ai/opencode.sh"
     "prompt-runner (universal LLM CLI)|ai/prompt-runner.sh"

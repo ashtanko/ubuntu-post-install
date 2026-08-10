@@ -34,6 +34,15 @@ For a source checkout, `.env` is gitignored and is a convenient repo-local confi
 | `ENABLE_AUTO_UPDATES` | [essentials/auto-updates.sh](../essentials/auto-updates.sh) | `yes` | Set `no` to skip unattended-upgrades |
 | `TZ` | [essentials/locale-timezone.sh](../essentials/locale-timezone.sh) | auto-detect | Falls back to ipapi.co when empty |
 | `LOCALE` | [essentials/locale-timezone.sh](../essentials/locale-timezone.sh) | `en_US.UTF-8` | Generated and set as system default |
+| `JOURNAL_MAX_USE` | [essentials/journald.sh](../essentials/journald.sh) | `200M` | systemd disk-size syntax: `200M`, `1G`, `10%` |
+| `INOTIFY_MAX_WATCHES` | [essentials/sysctl-limits.sh](../essentials/sysctl-limits.sh) | `524288` | `fs.inotify.max_user_watches` |
+| `INOTIFY_MAX_INSTANCES` | [essentials/sysctl-limits.sh](../essentials/sysctl-limits.sh) | `1024` | `fs.inotify.max_user_instances` |
+| `NOFILE_LIMIT` | [essentials/sysctl-limits.sh](../essentials/sysctl-limits.sh) | `1048576` | Soft/hard `nofile` ulimit via pam_limits; needs a new login session |
+| `NEW_HOSTNAME` | [system/hostname.sh](../system/hostname.sh) | — | Prompts if unset and interactive; skipped otherwise |
+| `EXTRA_USER_GROUPS` | [system/user-groups.sh](../system/user-groups.sh) | `docker dialout plugdev wireshark` | Space-separated; missing groups are skipped, not created |
+| `DNS_SERVERS` | [system/hosts-dns.sh](../system/hosts-dns.sh) | `1.1.1.1 9.9.9.9` | Space-separated resolvers written to systemd-resolved `DNS=` |
+| `DNS_FALLBACK_SERVERS` | [system/hosts-dns.sh](../system/hosts-dns.sh) | `1.0.0.1 149.112.112.112` | Written to systemd-resolved `FallbackDNS=` |
+| `SUDO_TIMESTAMP_TIMEOUT_MINUTES` | [system/sudoers.sh](../system/sudoers.sh) | — | Opt-in only: unset = script skips. Minutes; `-1` = never expire |
 | `VSCODE_EXTENSIONS` | [ide/vscode-extensions.sh](../ide/vscode-extensions.sh) | empty | Whitespace-separated extension IDs; empty = no-op |
 | `JETBRAINS_TOOLBOX_DIR` | [ide/jetbrains-toolbox.sh](../ide/jetbrains-toolbox.sh) | `$HOME/.local/share/JetBrains/Toolbox` | Toolbox install dir |
 | `NVIM_INSTALL_DIR` | [ide/nvim.sh](../ide/nvim.sh) | `$HOME/.local/share/nvim-stable` | Where the Neovim tarball is extracted |
@@ -44,9 +53,17 @@ For a source checkout, `.env` is gitignored and is a convenient repo-local confi
 | `BACKUP_ENCRYPT` | [tools/backup-home.sh](../tools/backup-home.sh) | `no` | `yes` = GPG-encrypt the tarball |
 | `BACKUP_GPG_RECIPIENT` | [tools/backup-home.sh](../tools/backup-home.sh) | `$GIT_EMAIL` | GPG recipient for encrypted backups |
 | `LLAMA_CPP_DIR` | [ai/llama-cpp.sh](../ai/llama-cpp.sh) | `$HOME/.local/src/llama.cpp` | Where llama.cpp is cloned and built |
+| `OLLAMA_MODELS` | [ai/ollama-models.sh](../ai/ollama-models.sh) | — | Required whitespace-separated model references; downloads only when the script is explicitly run |
+| `CLAUDE_CHANNEL` | [ai/claude.sh](../ai/claude.sh) | `stable` | Anthropic APT channel: `stable` or `latest` |
+| `CODEX_RELEASE` | [ai/codex.sh](../ai/codex.sh) | `latest` | Codex standalone release to install |
+| `COPILOT_VERSION` | [ai/github-copilot.sh](../ai/github-copilot.sh) | `latest` | GitHub Copilot CLI release to install |
+| `CLINE_VERSION` | [ai/cline.sh](../ai/cline.sh) | `latest` | Cline npm version or dist-tag |
+| `MCP_INSPECTOR_VERSION` | [ai/mcp-inspector.sh](../ai/mcp-inspector.sh) | `latest` | MCP Inspector npm version or dist-tag |
+| `LLM_VERSION` | [ai/llm-cli.sh](../ai/llm-cli.sh) | `latest` | `llm` PyPI release to install |
+| `LITELLM_VERSION` | [ai/litellm.sh](../ai/litellm.sh) | `latest` | LiteLLM PyPI release to install |
 | `PROMPT_BACKEND` | [ai/prompt-runner.sh](../ai/prompt-runner.sh) | `ollama` | `ollama` \| `openai` \| `anthropic` |
 | `PROMPT_MODEL` | [ai/prompt-runner.sh](../ai/prompt-runner.sh) | per-backend default | Override the model the `prompt` CLI uses |
-| `OLLAMA_HOST` | [ai/prompt-runner.sh](../ai/prompt-runner.sh) | `http://localhost:11434` | Remote Ollama endpoint if not localhost |
+| `OLLAMA_HOST` | [ai/prompt-runner.sh](../ai/prompt-runner.sh), [ai/ollama-models.sh](../ai/ollama-models.sh) | `http://localhost:11434` | Remote Ollama endpoint if not localhost |
 | `OPENAI_API_KEY` | [ai/prompt-runner.sh](../ai/prompt-runner.sh) | — | Required for `-b openai` |
 | `ANTHROPIC_API_KEY` | [ai/prompt-runner.sh](../ai/prompt-runner.sh) | — | Required for `-b anthropic` |
 

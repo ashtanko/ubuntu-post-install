@@ -79,13 +79,13 @@ Browse [docs/SCRIPTS.md](docs/SCRIPTS.md) for the complete inventory. Categories
 
 | Folder | Purpose |
 |---|---|
-| [essentials/](essentials/) | OS bootstrap: swap, UFW firewall, auto-updates, locale/TZ, GNOME tweaks, system info |
-| [system/](system/) | Foundations: apt upgrade + build tools, keyboard remap (keyd), GPG key, SSH key |
+| [essentials/](essentials/) | OS bootstrap: swap, UFW firewall, auto-updates, locale/TZ, GNOME tweaks, journal size cap, fstrim, motd-news, inotify/nofile limits, system info |
+| [system/](system/) | Foundations: apt upgrade + build tools, hostname, user groups, NTP, DNS, sudo timeout, keyboard remap (keyd), GPG key, SSH key |
 | [apps/](apps/) | GUI apps: Chrome, Guake, Warp, VS Code |
 | [dev/](dev/) | Runtimes: Java, Docker, Flutter, Node (NVM), Python (pyenv), Rust, Go |
-| [tools/](tools/) | Shell + CLI: Zsh + Oh My Zsh, Claude Code, bat/fzf/rg/eza/jq, Nerd Fonts, git config, pre-commit, backup, maintenance |
+| [tools/](tools/) | Shell + CLI: Zsh + Oh My Zsh, bat/fzf/rg/eza/jq, Nerd Fonts, git config, pre-commit, backup, maintenance |
 | [ide/](ide/) | Editors: Zed, Neovim, JetBrains Toolbox, VS Code extensions |
-| [ai/](ai/) | LLM tooling: Ollama, llama.cpp, Gemini CLI, Antigravity, opencode, prompt-runner |
+| [ai/](ai/) | LLM tooling: local inference, coding agents, provider-neutral CLIs, LiteLLM gateway, Fabric workflows, and MCP Inspector |
 | [software/](software/) | Virtualization: VirtualBox, GNOME Boxes/virt-manager, VMware prereqs |
 | [vpn/](vpn/) | VPN clients |
 | [mobile/](mobile/) | Manual mobile-dev utilities (not wired into setup.sh) |

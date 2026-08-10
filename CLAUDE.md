@@ -27,9 +27,9 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `system/` | OS foundations: apt upgrade, keyboard remapping, GPG key, SSH key |
 | `apps/` | GUI applications: Chrome, Guake, Warp, VS Code |
 | `dev/` | Development runtimes: Java, Docker, Flutter, Node, Python, Rust, Go |
-| `tools/` | Shell, CLI, and dev helpers: Zsh, Claude Code, CLI tools, fonts, git config, pre-commit, backup, maintenance |
+| `tools/` | Shell, CLI, and dev helpers: Zsh, CLI tools, fonts, git config, pre-commit, backup, maintenance |
 | `ide/` | Editors: Zed, Neovim, JetBrains Toolbox, VS Code extensions bulk install |
-| `ai/` | LLM tooling: Ollama, llama.cpp, Gemini CLI, Antigravity, opencode, prompt-runner |
+| `ai/` | LLM tooling: Ollama, llama.cpp, Claude Code, Codex, Gemini, Copilot, Hugging Face, Aider, opencode, prompt-runner |
 | `software/` | Virtualization: VirtualBox, GNOME Boxes/virt-manager, VMware prereqs |
 | `vpn/` | VPN clients: NordVPN |
 | `mobile/` | Mobile dev utilities (manual; not wired into setup.sh) |
@@ -45,12 +45,21 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `auto-updates.sh` | unattended-upgrades + 20auto-upgrades for daily security patches; set `ENABLE_AUTO_UPDATES=no` to skip |
 | `locale-timezone.sh` | Sets timezone (from `$TZ` or auto-detected via ipapi.co) and generates `$LOCALE` (default `en_US.UTF-8`) |
 | `gnome-settings.sh` | Idempotent gsettings: night light, tap-to-click, fixed workspaces, hidden files, etc. Skips if not GNOME |
+| `journald.sh` | Caps the systemd journal to `$JOURNAL_MAX_USE` (default `200M`) via a journald.conf.d drop-in |
+| `fstrim.sh` | Enables `fstrim.timer` for periodic SSD/NVMe TRIM; skips on rotational-only disks |
+| `motd-news.sh` | Disables Ubuntu's `motd-news` ESM/livepatch login-banner ads (config file + systemd timer) |
+| `sysctl-limits.sh` | Raises inotify watch/instance limits and the open-file (`nofile`) limit for IDEs, docker, and bundlers |
 | `system-info.sh` | One-shot dump of CPU/RAM/GPU/disk/distro to `~/system-info-<ts>.log` |
 
 ### system/
 | Script | Purpose |
 |---|---|
 | `base.sh` | apt upgrade + build-essential, git, curl, wget, GNOME tweaks |
+| `hostname.sh` | Sets hostname (from `$NEW_HOSTNAME` or prompt) and syncs the 127.0.1.1 line in `/etc/hosts` |
+| `user-groups.sh` | Adds `$USER` to common dev groups (`$EXTRA_USER_GROUPS`, default docker/dialout/plugdev/wireshark); skips groups that don't exist yet |
+| `ntp.sh` | Ensures the clock is time-synced — `timedatectl set-ntp` on systemd, chrony fallback otherwise |
+| `hosts-dns.sh` | Configures systemd-resolved DNS/FallbackDNS via drop-in (`$DNS_SERVERS`, `$DNS_FALLBACK_SERVERS`); no-ops if systemd-resolved isn't in use |
+| `sudoers.sh` | Opt-in only (`$SUDO_TIMESTAMP_TIMEOUT_MINUTES`): extends the sudo timestamp timeout via a `visudo -cf`-validated drop-in. Never configures passwordless sudo |
 | `keyboard.sh` | keyd daemon — Left Alt → Ctrl, Left Ctrl → Meta (macOS-style) |
 | `gpg.sh` | GPG key generation, auto-extracts key ID, configures git signing |
 | `ssh.sh` | ed25519 SSH key + installs ssh-agent autostart block in shell rc files |
@@ -83,7 +92,6 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | Script | Purpose |
 |---|---|
 | `zsh.sh` | Zsh + Oh My Zsh; set `INSTALL_OH_MY_ZSH=no` to skip OMZ |
-| `claude.sh` | Claude Code CLI (installs Node via verified NodeSource repo if missing) |
 | `cli-tools.sh` | bat, fzf, ripgrep, eza, jq, htop, tmux, tree, gh (GitHub CLI) |
 | `modern-cli.sh` | lazygit, delta, zoxide, btop, direnv, fd, dust, hyperfine, tldr (tealdeer) |
 | `btop.sh` | btop — modern resource/process monitor (apt) |
@@ -105,8 +113,23 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | Script | Purpose |
 |---|---|
 | `ollama.sh` | Ollama via official installer; ensures systemd service is up |
+| `ollama-models.sh` | Pulls the explicitly configured `$OLLAMA_MODELS` list |
 | `llama-cpp.sh` | Build llama.cpp from source (CMake, Release); symlinks main binaries to `~/.local/bin` |
+| `claude.sh` | Claude Code CLI from Anthropic's signed APT repository |
+| `codex.sh` | OpenAI Codex CLI via the official standalone installer |
 | `gemini.sh` | Google Gemini CLI (installs Node via verified NodeSource repo if missing) |
+| `github-copilot.sh` | GitHub Copilot CLI via its official user-local installer |
+| `huggingface-cli.sh` | Standalone Hugging Face `hf` CLI |
+| `aider.sh` | Aider coding CLI via its isolated installer |
+| `goose.sh` | Provider-neutral goose agent CLI |
+| `qwen-code.sh` | Qwen Code terminal agent |
+| `cursor-agent.sh` | Cursor Agent CLI |
+| `mistral-vibe.sh` | Mistral Vibe coding agent and ACP command |
+| `cline.sh` | Cline terminal coding agent via npm |
+| `fabric.sh` | Reusable prompt-pattern and content workflow CLI |
+| `llm-cli.sh` | Provider-neutral LLM CLI via pipx |
+| `litellm.sh` | OpenAI-compatible LiteLLM proxy CLI via pipx |
+| `mcp-inspector.sh` | MCP server debugger via npm |
 | `antigravity.sh` | Antigravity auto-updater via Google APT repo |
 | `opencode.sh` | opencode CLI via official installer |
 | `prompt-runner.sh` | Installs `prompt` command — runs text/.prompt files against ollama / openai / anthropic |
@@ -174,10 +197,27 @@ Copy `.env.example` to `.env` and fill in your values. `.env` is gitignored. Eve
 | `ENABLE_AUTO_UPDATES` | essentials/auto-updates.sh | `yes` |
 | `TZ` | essentials/locale-timezone.sh | auto-detect via ipapi.co |
 | `LOCALE` | essentials/locale-timezone.sh | `en_US.UTF-8` |
+| `JOURNAL_MAX_USE` | essentials/journald.sh | `200M` |
+| `INOTIFY_MAX_WATCHES` | essentials/sysctl-limits.sh | `524288` |
+| `INOTIFY_MAX_INSTANCES` | essentials/sysctl-limits.sh | `1024` |
+| `NOFILE_LIMIT` | essentials/sysctl-limits.sh | `1048576` |
+| `NEW_HOSTNAME` | system/hostname.sh | — prompts if unset (interactive) |
+| `EXTRA_USER_GROUPS` | system/user-groups.sh | `docker dialout plugdev wireshark` |
+| `DNS_SERVERS` | system/hosts-dns.sh | `1.1.1.1 9.9.9.9` |
+| `DNS_FALLBACK_SERVERS` | system/hosts-dns.sh | `1.0.0.1 149.112.112.112` |
+| `SUDO_TIMESTAMP_TIMEOUT_MINUTES` | system/sudoers.sh | — unset = skip (opt-in only) |
 | `LLAMA_CPP_DIR` | ai/llama-cpp.sh | `$HOME/.local/src/llama.cpp` |
+| `OLLAMA_MODELS` | ai/ollama-models.sh | — required, whitespace-separated |
+| `CLAUDE_CHANNEL` | ai/claude.sh | `stable` |
+| `CODEX_RELEASE` | ai/codex.sh | `latest` |
+| `COPILOT_VERSION` | ai/github-copilot.sh | `latest` |
+| `CLINE_VERSION` | ai/cline.sh | `latest` |
+| `MCP_INSPECTOR_VERSION` | ai/mcp-inspector.sh | `latest` |
+| `LLM_VERSION` | ai/llm-cli.sh | `latest` |
+| `LITELLM_VERSION` | ai/litellm.sh | `latest` |
 | `PROMPT_BACKEND` | ai/prompt-runner.sh (`prompt` CLI) | `ollama` |
 | `PROMPT_MODEL` | ai/prompt-runner.sh | per-backend default |
-| `OLLAMA_HOST` | ai/prompt-runner.sh | `http://localhost:11434` |
+| `OLLAMA_HOST` | ai/prompt-runner.sh, ai/ollama-models.sh | `http://localhost:11434` |
 | `OPENAI_API_KEY` | ai/prompt-runner.sh | — required for `-b openai` |
 | `ANTHROPIC_API_KEY` | ai/prompt-runner.sh | — required for `-b anthropic` |
 | `VSCODE_EXTENSIONS` | ide/vscode-extensions.sh | — empty = no-op |
