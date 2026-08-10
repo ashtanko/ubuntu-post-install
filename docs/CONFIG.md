@@ -25,6 +25,12 @@ For a source checkout, `.env` is gitignored and is a convenient repo-local confi
 | `GO_INSTALL_DIR` | [dev/go.sh](../dev/go.sh) | `/usr/local/go` | Go SDK extraction target (needs sudo) |
 | `GO_ARCHIVE_URL` / `GO_ARCHIVE_SHA256` | [dev/go.sh](../dev/go.sh) | official release | Custom archives require an explicit SHA-256 checksum |
 | `JAVA_VERSION` | [dev/java.sh](../dev/java.sh) | interactive prompt (fallback `21`) | OpenJDK major: `8` \| `11` \| `17` \| `21` \| `25` |
+| `DOTNET_VERSION` | [dev/dotnet.sh](../dev/dotnet.sh) | `8.0` | .NET SDK major.minor to install |
+| `RBENV_ROOT` | [dev/ruby.sh](../dev/ruby.sh) | `$HOME/.rbenv` | rbenv installation directory |
+| `RUBY_VERSION` | [dev/ruby.sh](../dev/ruby.sh) | latest stable | Pins a version; resolved from `rbenv install -l` when empty |
+| `PHP_VERSION` | [dev/php.sh](../dev/php.sh) | `8.3` | PHP major.minor installed from the `ondrej/php` PPA |
+| `DENO_INSTALL` | [dev/deno.sh](../dev/deno.sh) | `$HOME/.deno` | Deno installation directory |
+| `BUN_INSTALL` | [dev/bun.sh](../dev/bun.sh) | `$HOME/.bun` | Bun installation directory |
 | `INSTALL_OH_MY_ZSH` | [tools/zsh.sh](../tools/zsh.sh) | `yes` | Set `no` to install plain Zsh only |
 | `INSTALL_FISHER` | [tools/fish.sh](../tools/fish.sh) | `yes` | Set `no` to install plain Fish only |
 | `SET_FISH_AS_DEFAULT` | [tools/fish.sh](../tools/fish.sh) | `yes` | Set `no` to leave the current login shell unchanged |
@@ -34,6 +40,8 @@ For a source checkout, `.env` is gitignored and is a convenient repo-local confi
 | `SWAP_FILE` / `FSTAB_FILE` | [essentials/swap.sh](../essentials/swap.sh) | `/swapfile` / `/etc/fstab` | Overrideable paths also support isolated regression testing |
 | `ENABLE_UFW` | [essentials/firewall.sh](../essentials/firewall.sh) | `yes` | Set `no` to skip firewall configuration |
 | `ENABLE_AUTO_UPDATES` | [essentials/auto-updates.sh](../essentials/auto-updates.sh) | `yes` | Set `no` to skip unattended-upgrades |
+| `ENABLE_FAIL2BAN` | [essentials/fail2ban.sh](../essentials/fail2ban.sh) | `yes` | Set `no` to skip SSH brute-force protection |
+| `FAIL2BAN_BANTIME` / `FAIL2BAN_FINDTIME` / `FAIL2BAN_MAXRETRY` | [essentials/fail2ban.sh](../essentials/fail2ban.sh) | `1h` / `10m` / `5` | sshd jail thresholds; bantime/findtime use systemd-style durations |
 | `TZ` | [essentials/locale-timezone.sh](../essentials/locale-timezone.sh) | auto-detect | Falls back to ipapi.co when empty |
 | `LOCALE` | [essentials/locale-timezone.sh](../essentials/locale-timezone.sh) | `en_US.UTF-8` | Generated and set as system default |
 | `JOURNAL_MAX_USE` | [essentials/journald.sh](../essentials/journald.sh) | `200M` | systemd disk-size syntax: `200M`, `1G`, `10%` |
@@ -49,11 +57,14 @@ For a source checkout, `.env` is gitignored and is a convenient repo-local confi
 | `JETBRAINS_TOOLBOX_DIR` | [ide/jetbrains-toolbox.sh](../ide/jetbrains-toolbox.sh) | `$HOME/.local/share/JetBrains/Toolbox` | Toolbox install dir |
 | `NVIM_INSTALL_DIR` | [ide/nvim.sh](../ide/nvim.sh) | `$HOME/.local/share/nvim-stable` | Where the Neovim tarball is extracted |
 | `NVIM_ARCHIVE_URL` / `NVIM_ARCHIVE_SHA256` | [ide/nvim.sh](../ide/nvim.sh) | official release | Custom archives require an explicit SHA-256 checksum |
+| `CURSOR_INSTALL_DIR` | [ide/cursor.sh](../ide/cursor.sh) | `$HOME/.local/share/Cursor` | Where the Cursor AppImage is placed |
 | `GPG_KEY_ID` | [system/gpg.sh](../system/gpg.sh) | unique `GIT_EMAIL` match | Select an existing secret key explicitly when email lookup is ambiguous |
 | `ENABLE_GIT_COMMIT_SIGNING` | [tools/git-config.sh](../tools/git-config.sh) | `no` | Flip to `yes` after running [system/gpg.sh](../system/gpg.sh) |
 | `BACKUP_DIR` | [tools/backup-home.sh](../tools/backup-home.sh) | `$HOME/backups` | Backup tarball destination |
 | `BACKUP_ENCRYPT` | [tools/backup-home.sh](../tools/backup-home.sh) | `no` | `yes` = GPG-encrypt the tarball |
 | `BACKUP_GPG_RECIPIENT` | [tools/backup-home.sh](../tools/backup-home.sh) | `$GIT_EMAIL` | GPG recipient for encrypted backups |
+| `DOTFILES_REPO` | [tools/dotfiles.sh](../tools/dotfiles.sh) | — | Optional repo URL for `chezmoi init`; the script never runs `chezmoi apply` |
+| `TAILSCALE_AUTHKEY` | [vpn/tailscale.sh](../vpn/tailscale.sh) | — | Non-interactive `tailscale up`; empty = manual browser login |
 | `LLAMA_CPP_DIR` | [ai/llama-cpp.sh](../ai/llama-cpp.sh) | `$HOME/.local/src/llama.cpp` | Where llama.cpp is cloned and built |
 | `OLLAMA_MODELS` | [ai/ollama-models.sh](../ai/ollama-models.sh) | — | Required whitespace-separated model references; downloads only when the script is explicitly run |
 | `CLAUDE_CHANNEL` | [ai/claude.sh](../ai/claude.sh) | `stable` | Anthropic APT channel: `stable` or `latest` |

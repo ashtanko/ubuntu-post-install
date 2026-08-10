@@ -18,6 +18,8 @@ OS bootstrap — run these first on a fresh install.
 | [motd-news.sh](../essentials/motd-news.sh) | Disables Ubuntu's `motd-news` ESM/livepatch login-banner ads (config file + systemd timer) |
 | [sysctl-limits.sh](../essentials/sysctl-limits.sh) | Raises inotify watch/instance limits and the open-file (`nofile`) limit for IDEs, docker, and bundlers |
 | [system-info.sh](../essentials/system-info.sh) | One-shot dump of CPU/RAM/GPU/disk/distro to `~/system-info-<ts>.log` |
+| [fail2ban.sh](../essentials/fail2ban.sh) | SSH brute-force protection via a `jail.d` drop-in; set `ENABLE_FAIL2BAN=no` to skip |
+| [lynis.sh](../essentials/lynis.sh) | One-shot Lynis security audit dumped to `~/lynis-audit-<ts>.log` |
 
 ## system/
 
@@ -45,6 +47,8 @@ GUI applications.
 | [guake.sh](../apps/guake.sh) | Guake drop-down terminal |
 | [warp.sh](../apps/warp.sh) | Warp terminal (amd64 repository only; rejected before apt changes otherwise) |
 | [vscode.sh](../apps/vscode.sh) | VS Code via Microsoft apt repo |
+| [bitwarden-cli.sh](../apps/bitwarden-cli.sh) | Bitwarden CLI (`bw`) — official Linux zip, amd64 only |
+| [flameshot.sh](../apps/flameshot.sh) | Flameshot annotated screenshot tool |
 
 ## dev/
 
@@ -59,10 +63,19 @@ Language runtimes and SDKs.
 | [python.sh](../dev/python.sh) | Python 3 + pyenv + pipx + poetry |
 | [rust.sh](../dev/rust.sh) | Rust toolchain via rustup |
 | [go.sh](../dev/go.sh) | Latest Go SDK — version detection with fallback (VERSION endpoint → JSON) |
-| [databases.sh](../dev/databases.sh) | PostgreSQL, MySQL, Redis, SQLite CLI clients + pgcli/mycli/litecli (interactive shells via pipx) |
+| [databases.sh](../dev/databases.sh) | PostgreSQL, MySQL, Redis, SQLite, MongoDB (`mongosh` + database tools) CLI clients + pgcli/mycli/litecli (interactive shells via pipx) |
 | [kubernetes.sh](../dev/kubernetes.sh) | kubectl + helm + k9s + kind + kustomize |
 | [aws-cli.sh](../dev/aws-cli.sh) | AWS CLI v2 (official zip) + Session Manager plugin |
 | [terraform.sh](../dev/terraform.sh) | Terraform (HashiCorp apt repo) + tflint + tfsec |
+| [dotnet.sh](../dev/dotnet.sh) | .NET SDK via Microsoft's apt repo; `$DOTNET_VERSION` picks the major.minor (default `8.0`) |
+| [ruby.sh](../dev/ruby.sh) | Ruby via rbenv + ruby-build + bundler; `$RUBY_VERSION` pins a version (default: latest stable) |
+| [gcloud.sh](../dev/gcloud.sh) | Google Cloud CLI via Google's apt repo + `gke-gcloud-auth-plugin` for kubectl/GKE |
+| [azure-cli.sh](../dev/azure-cli.sh) | Azure CLI (`az`) via Microsoft's official installer |
+| [podman.sh](../dev/podman.sh) | Podman + podman-compose (rootless containers); reports missing subuid/subgid rather than rewriting them |
+| [deno.sh](../dev/deno.sh) | Deno runtime via official installer into `$DENO_INSTALL` |
+| [bun.sh](../dev/bun.sh) | Bun runtime/package manager via official installer into `$BUN_INSTALL` |
+| [php.sh](../dev/php.sh) | PHP (`ondrej/php` PPA) + common extensions + Composer (signature-verified) |
+| [cpp.sh](../dev/cpp.sh) | C/C++ toolchain: gcc/clang, cmake, ninja, ccache, gdb/lldb, clang-format/tidy, cppcheck, valgrind |
 
 ## tools/
 
@@ -80,6 +93,17 @@ Shell, CLI, and dev helpers.
 | [pre-commit-setup.sh](../tools/pre-commit-setup.sh) | pre-commit framework via pipx + git template hook + starter `.pre-commit-config.yaml` |
 | [backup-home.sh](../tools/backup-home.sh) | Tar (optionally GPG-encrypted) backup of SSH/GPG/AWS/.config to `$BACKUP_DIR` |
 | [system-maintenance.sh](../tools/system-maintenance.sh) | apt autoremove/clean, journal vacuum, docker/snap/flatpak prune, user-cache trim |
+| [wireshark.sh](../tools/wireshark.sh) | Wireshark + tshark; preseeds non-root packet capture via the `wireshark` group |
+| [dotfiles.sh](../tools/dotfiles.sh) | chezmoi dotfiles manager; optionally clones `$DOTFILES_REPO` (never auto-applies) |
+| [rclone.sh](../tools/rclone.sh) | rclone cloud storage sync — pairs with `backup-home.sh` for offsite copies |
+| [lazydocker.sh](../tools/lazydocker.sh) | lazydocker terminal UI for Docker (GitHub release, checksum-verified) |
+| [tmux-config.sh](../tools/tmux-config.sh) | TPM plugin manager + starter `~/.tmux.conf` (written only if absent); prefix rebound to `Ctrl-a` |
+| [restic.sh](../tools/restic.sh) | restic — deduplicated, encrypted, incremental backups; speaks rclone remotes natively |
+| [network-tools.sh](../tools/network-tools.sh) | mtr, nmap, dig, ss, lsof, nc, iperf3, HTTPie, whois |
+| [gitleaks.sh](../tools/gitleaks.sh) | Standalone gitleaks secret scanner (also wired as a pre-commit hook by `pre-commit-setup.sh`) |
+| [yq.sh](../tools/yq.sh) | yq — the YAML counterpart to `jq` (checksum-verified from yq's hash matrix) |
+| [just.sh](../tools/just.sh) | `just` command runner (GitHub release, checksum-verified) |
+| [atuin.sh](../tools/atuin.sh) | Atuin searchable shell history, wired into Bash, Zsh, and Fish; sync is opt-in |
 
 ## ide/
 
@@ -91,6 +115,9 @@ Editors and IDEs.
 | [vscode-extensions.sh](../ide/vscode-extensions.sh) | Bulk-install extensions from `$VSCODE_EXTENSIONS` (whitespace-separated) |
 | [jetbrains-toolbox.sh](../ide/jetbrains-toolbox.sh) | JetBrains Toolbox app + desktop entry; pick IDEs from the Toolbox UI |
 | [nvim.sh](../ide/nvim.sh) | Latest Neovim from official GitHub release tarball; writes starter `init.lua` if absent |
+| [android-studio.sh](../ide/android-studio.sh) | Android Studio via snap (`--classic`) — the SDK/emulator/device tooling `dev/flutter.sh` leaves out of scope |
+| [cursor.sh](../ide/cursor.sh) | Cursor editor (official AppImage, amd64 only) — GUI counterpart to `ai/cursor-agent.sh`'s CLI agent |
+| [dbeaver.sh](../ide/dbeaver.sh) | DBeaver Community via its official apt repo — GUI counterpart to `dev/databases.sh`'s CLI clients |
 
 ## ai/
 
@@ -129,6 +156,15 @@ Virtualization stacks.
 | [virtualbox.sh](../software/virtualbox.sh) | VirtualBox + extension pack |
 | [boxes.sh](../software/boxes.sh) | GNOME Boxes + virt-manager |
 | [vmware.sh](../software/vmware.sh) | Installs kernel build prereqs for VMware Workstation Pro (manual download required) |
+
+## vpn/
+
+VPN clients.
+
+| Script | Purpose |
+|---|---|
+| [nord.sh](../vpn/nord.sh) | NordVPN official Linux app via `install.sh`; adds user to `nordvpn` group |
+| [tailscale.sh](../vpn/tailscale.sh) | Tailscale mesh VPN via the official installer; `$TAILSCALE_AUTHKEY` enables non-interactive `tailscale up` |
 
 ## mobile/
 

@@ -23,11 +23,11 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 
 | Folder | Purpose |
 |---|---|
-| `essentials/` | Core OS bootstrap: swap, firewall, auto-updates, locale/TZ, GNOME tweaks, system info |
+| `essentials/` | Core OS bootstrap: swap, firewall, fail2ban, Lynis audit, auto-updates, locale/TZ, GNOME tweaks, system info |
 | `system/` | OS foundations: apt upgrade, keyboard remapping, GPG key, SSH key |
-| `apps/` | GUI applications: Chrome, Guake, Warp, VS Code |
-| `dev/` | Development runtimes: Java, Docker, Flutter, Node, Python, Rust, Go |
-| `tools/` | Shell, CLI, and dev helpers: Zsh, CLI tools, fonts, git config, pre-commit, backup, maintenance |
+| `apps/` | GUI applications + CLIs: Chrome, Guake, Warp, VS Code, Postman, Bitwarden CLI, Flameshot |
+| `dev/` | Development runtimes + cloud CLIs: Java, Docker, Podman, Flutter, Node, Deno, Bun, Python, Rust, Go, .NET, Ruby, PHP, C/C++, AWS/GCP/Azure |
+| `tools/` | Shell, CLI, and dev helpers: Zsh, CLI tools, tmux config, fonts, git config, pre-commit, gitleaks, backup + restic, maintenance, Wireshark, network tools, chezmoi, rclone, lazydocker, yq, just, Atuin |
 | `ide/` | Editors: Zed, Neovim, JetBrains Toolbox, VS Code extensions bulk install |
 | `ai/` | LLM tooling: Ollama, llama.cpp, Claude Code, Codex, Gemini, Copilot, Hugging Face, Aider, opencode, prompt-runner |
 | `software/` | Virtualization: VirtualBox, GNOME Boxes/virt-manager, VMware prereqs |
@@ -50,6 +50,8 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `motd-news.sh` | Disables Ubuntu's `motd-news` ESM/livepatch login-banner ads (config file + systemd timer) |
 | `sysctl-limits.sh` | Raises inotify watch/instance limits and the open-file (`nofile`) limit for IDEs, docker, and bundlers |
 | `system-info.sh` | One-shot dump of CPU/RAM/GPU/disk/distro to `~/system-info-<ts>.log` |
+| `fail2ban.sh` | SSH brute-force protection via a `jail.d` drop-in; set `ENABLE_FAIL2BAN=no` to skip |
+| `lynis.sh` | One-shot Lynis security audit dumped to `~/lynis-audit-<ts>.log` |
 
 ### system/
 | Script | Purpose |
@@ -72,6 +74,8 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `postman.sh` | Postman API client — official tarball into `$POSTMAN_INSTALL_DIR` (default `~/.local/share/Postman`), with `~/.local/bin/postman` symlink and `.desktop` entry |
 | `warp.sh` | Warp terminal |
 | `vscode.sh` | VS Code via Microsoft apt repo |
+| `bitwarden-cli.sh` | Bitwarden CLI (`bw`) — official Linux zip, amd64 only |
+| `flameshot.sh` | Flameshot annotated screenshot tool |
 
 ### dev/
 | Script | Purpose |
@@ -83,10 +87,19 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `python.sh` | Python 3 + pyenv + pipx + poetry |
 | `rust.sh` | Rust toolchain via rustup |
 | `go.sh` | Latest Go SDK — version detection with fallback (VERSION endpoint → JSON) |
-| `databases.sh` | PostgreSQL/MySQL/Redis/SQLite CLI clients + pgcli/mycli/litecli (interactive shells via pipx) |
+| `databases.sh` | PostgreSQL/MySQL/Redis/SQLite/MongoDB CLI clients + pgcli/mycli/litecli (interactive shells via pipx) |
 | `kubernetes.sh` | kubectl + helm + k9s + kind + kustomize |
 | `aws-cli.sh` | AWS CLI v2 (official zip) + Session Manager plugin |
 | `terraform.sh` | Terraform (HashiCorp apt repo) + tflint + tfsec |
+| `dotnet.sh` | .NET SDK via Microsoft's apt repo; `$DOTNET_VERSION` picks the major.minor (default `8.0`) |
+| `ruby.sh` | Ruby via rbenv + ruby-build + bundler; `$RUBY_VERSION` pins a version (default: latest stable) |
+| `gcloud.sh` | Google Cloud CLI via Google's apt repo + `gke-gcloud-auth-plugin` for kubectl/GKE |
+| `azure-cli.sh` | Azure CLI (`az`) via Microsoft's official installer |
+| `podman.sh` | Podman + podman-compose (rootless containers); reports missing subuid/subgid rather than rewriting them |
+| `deno.sh` | Deno runtime via official installer into `$DENO_INSTALL` |
+| `bun.sh` | Bun runtime/package manager via official installer into `$BUN_INSTALL` |
+| `php.sh` | PHP (`ondrej/php` PPA) + common extensions + Composer (signature-verified) |
+| `cpp.sh` | C/C++ toolchain: gcc/clang, cmake, ninja, ccache, gdb/lldb, clang-format/tidy, cppcheck, valgrind |
 
 ### tools/
 | Script | Purpose |
@@ -100,6 +113,17 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `pre-commit-setup.sh` | pre-commit framework via pipx + git template hook + starter `.pre-commit-config.yaml` |
 | `backup-home.sh` | Tar (optionally GPG-encrypted) backup of SSH/GPG/AWS/.config to `$BACKUP_DIR` |
 | `system-maintenance.sh` | apt autoremove/clean, journal vacuum, docker/snap/flatpak prune, user-cache trim |
+| `wireshark.sh` | Wireshark + tshark; preseeds non-root packet capture via the `wireshark` group |
+| `dotfiles.sh` | chezmoi dotfiles manager; optionally clones `$DOTFILES_REPO` (never auto-applies) |
+| `rclone.sh` | rclone cloud storage sync — pairs with `backup-home.sh` for offsite copies |
+| `lazydocker.sh` | lazydocker terminal UI for Docker (GitHub release, checksum-verified) |
+| `tmux-config.sh` | TPM plugin manager + starter `~/.tmux.conf` (written only if absent); prefix rebound to `Ctrl-a` |
+| `restic.sh` | restic — deduplicated, encrypted, incremental backups; speaks rclone remotes natively |
+| `network-tools.sh` | mtr, nmap, dig, ss, lsof, nc, iperf3, HTTPie, whois |
+| `gitleaks.sh` | Standalone gitleaks secret scanner (also wired as a pre-commit hook by `pre-commit-setup.sh`) |
+| `yq.sh` | yq — the YAML counterpart to `jq` (checksum-verified from yq's hash matrix) |
+| `just.sh` | `just` command runner (GitHub release, checksum-verified) |
+| `atuin.sh` | Atuin searchable shell history, wired into Bash, Zsh, and Fish; sync is opt-in |
 
 ### ide/
 | Script | Purpose |
@@ -108,6 +132,9 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `vscode-extensions.sh` | Bulk-install extensions from `$VSCODE_EXTENSIONS` (whitespace-separated) |
 | `jetbrains-toolbox.sh` | JetBrains Toolbox app + desktop entry; pick IDEs from the Toolbox UI |
 | `nvim.sh` | Latest Neovim from official GitHub release tarball; writes starter `init.lua` if absent |
+| `android-studio.sh` | Android Studio via snap (`--classic`) — the SDK/emulator/device tooling `dev/flutter.sh` leaves out of scope |
+| `cursor.sh` | Cursor editor (official AppImage, amd64 only) — GUI counterpart to `ai/cursor-agent.sh`'s CLI agent |
+| `dbeaver.sh` | DBeaver Community via its official apt repo — GUI counterpart to `dev/databases.sh`'s CLI clients |
 
 ### ai/
 | Script | Purpose |
@@ -145,6 +172,7 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | Script | Purpose |
 |---|---|
 | `nord.sh` | NordVPN official Linux app via `install.sh`; adds user to `nordvpn` group; prints reminder to run `nordvpn login` |
+| `tailscale.sh` | Tailscale mesh VPN via the official installer; `$TAILSCALE_AUTHKEY` enables non-interactive `tailscale up` |
 
 ### mobile/
 | Script | Purpose |
@@ -189,12 +217,22 @@ Copy `.env.example` to `.env` and fill in your values. `.env` is gitignored. Eve
 | `PYENV_ROOT` | dev/python.sh | `$HOME/.pyenv` |
 | `GO_INSTALL_DIR` | dev/go.sh | `/usr/local/go` |
 | `JAVA_VERSION` | dev/java.sh | interactive prompt (fallback `21`) |
+| `DOTNET_VERSION` | dev/dotnet.sh | `8.0` |
+| `RBENV_ROOT` | dev/ruby.sh | `$HOME/.rbenv` |
+| `RUBY_VERSION` | dev/ruby.sh | latest stable |
+| `PHP_VERSION` | dev/php.sh | `8.3` |
+| `DENO_INSTALL` | dev/deno.sh | `$HOME/.deno` |
+| `BUN_INSTALL` | dev/bun.sh | `$HOME/.bun` |
 | `INSTALL_OH_MY_ZSH` | tools/zsh.sh | `yes` |
 | `INSTALL_DOCKER_DESKTOP` | dev/docker.sh | `yes` |
 | `SETUP_LOG_FILE` | setup.sh | `$HOME/ubuntu-setup.log` |
 | `SWAP_SIZE_GB` | essentials/swap.sh | `4` |
 | `ENABLE_UFW` | essentials/firewall.sh | `yes` |
 | `ENABLE_AUTO_UPDATES` | essentials/auto-updates.sh | `yes` |
+| `ENABLE_FAIL2BAN` | essentials/fail2ban.sh | `yes` |
+| `FAIL2BAN_BANTIME` | essentials/fail2ban.sh | `1h` |
+| `FAIL2BAN_FINDTIME` | essentials/fail2ban.sh | `10m` |
+| `FAIL2BAN_MAXRETRY` | essentials/fail2ban.sh | `5` |
 | `TZ` | essentials/locale-timezone.sh | auto-detect via ipapi.co |
 | `LOCALE` | essentials/locale-timezone.sh | `en_US.UTF-8` |
 | `JOURNAL_MAX_USE` | essentials/journald.sh | `200M` |
@@ -223,10 +261,13 @@ Copy `.env.example` to `.env` and fill in your values. `.env` is gitignored. Eve
 | `VSCODE_EXTENSIONS` | ide/vscode-extensions.sh | — empty = no-op |
 | `JETBRAINS_TOOLBOX_DIR` | ide/jetbrains-toolbox.sh | `$HOME/.local/share/JetBrains/Toolbox` |
 | `NVIM_INSTALL_DIR` | ide/nvim.sh | `$HOME/.local/share/nvim-stable` |
+| `CURSOR_INSTALL_DIR` | ide/cursor.sh | `$HOME/.local/share/Cursor` |
 | `POSTMAN_INSTALL_DIR` | apps/postman.sh | `$HOME/.local/share/Postman` |
 | `ENABLE_GIT_COMMIT_SIGNING` | tools/git-config.sh | `no` |
 | `BACKUP_DIR` | tools/backup-home.sh | `$HOME/backups` |
 | `BACKUP_ENCRYPT` | tools/backup-home.sh | `no` |
 | `BACKUP_GPG_RECIPIENT` | tools/backup-home.sh | `$GIT_EMAIL` |
+| `DOTFILES_REPO` | tools/dotfiles.sh | — unset = skip `chezmoi init` |
+| `TAILSCALE_AUTHKEY` | vpn/tailscale.sh | — unset = manual `tailscale up` login |
 
 When `GIT_NAME` and `GIT_EMAIL` are set, `system/gpg.sh` generates the key non-interactively (no passphrase, RSA 4096). Without them it falls back to the interactive `gpg --full-generate-key` wizard.

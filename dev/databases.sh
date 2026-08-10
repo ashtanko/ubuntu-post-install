@@ -33,6 +33,54 @@ install_if_missing redis-cli redis-tools
 install_if_missing mysql   default-mysql-client
 install_if_missing sqlite3 sqlite3
 
+# MongoDB shell + tools. Not in Ubuntu's own archive — MongoDB publishes its
+# own apt repo, pinned per Ubuntu codename. Newer codenames sometimes have no
+# suite yet, so fall back to the most recent LTS that does (same approach as
+# dev/terraform.sh).
+if command -v mongosh &>/dev/null; then
+    echo "✅ mongosh already installed"
+else
+    echo "📦 Adding MongoDB apt repository..."
+    sudo apt-get install -y ca-certificates curl gnupg
+
+    sudo install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL --retry 3 --retry-all-errors https://www.mongodb.org/static/pgp/server-8.0.asc \
+        | sudo gpg --dearmor --yes -o /etc/apt/keyrings/mongodb-server-8.0.gpg
+    sudo chmod a+r /etc/apt/keyrings/mongodb-server-8.0.gpg
+
+    CODENAME=$(lsb_release -cs)
+    MONGO_SUITE=""
+    # No `curl | grep -q` here — grep exits at the first match, curl dies of
+    # SIGPIPE, and `set -o pipefail` would fail the check for every suite.
+    MONGO_INDEX=$(mktemp)
+    # shellcheck disable=SC2064
+    trap "rm -f '$MONGO_INDEX'" EXIT
+    for CANDIDATE in "$CODENAME" noble jammy; do
+        if curl -fsSL --retry 3 --retry-all-errors -o "$MONGO_INDEX" \
+            "https://repo.mongodb.org/apt/ubuntu/dists/${CANDIDATE}/mongodb-org/8.0/Release" 2>/dev/null; then
+            MONGO_SUITE="$CANDIDATE"
+            break
+        fi
+    done
+    rm -f "$MONGO_INDEX"
+    trap - EXIT
+
+    if [ -z "$MONGO_SUITE" ]; then
+        echo "⚠️  No MongoDB apt suite found for $CODENAME — skipping mongosh"
+    else
+        [ "$MONGO_SUITE" = "$CODENAME" ] \
+            || echo "⚠️  MongoDB has no packages for $CODENAME — using the $MONGO_SUITE suite instead"
+        echo "deb [ arch=amd64,arm64 signed-by=/etc/apt/keyrings/mongodb-server-8.0.gpg ] \
+https://repo.mongodb.org/apt/ubuntu ${MONGO_SUITE}/mongodb-org/8.0 multiverse" \
+            | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list > /dev/null
+
+        echo "📦 Installing mongosh + mongodb-database-tools..."
+        sudo apt-get update
+        sudo apt-get install -y mongodb-mongosh mongodb-database-tools
+        echo "✅ mongosh installed"
+    fi
+fi
+
 # Interactive shells via pipx (auto-completion + syntax highlighting)
 if ! command -v pipx &>/dev/null; then
     echo "📦 Installing pipx..."
@@ -55,6 +103,7 @@ echo "   psql      - PostgreSQL"
 echo "   redis-cli - Redis"
 echo "   mysql     - MySQL/MariaDB"
 echo "   sqlite3   - SQLite"
+command -v mongosh &>/dev/null && echo "   mongosh   - MongoDB (+ mongodump/mongorestore)"
 echo "   pgcli     - PostgreSQL with autocomplete"
 echo "   mycli     - MySQL with autocomplete"
 echo "   litecli   - SQLite with autocomplete"
