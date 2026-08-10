@@ -30,7 +30,11 @@ else
     CHEZMOI_INSTALLER=$(mktemp)
     trap 'rm -f "$CHEZMOI_INSTALLER"' EXIT
     curl -fsSL --retry 3 --retry-all-errors -o "$CHEZMOI_INSTALLER" https://get.chezmoi.io
-    sh "$CHEZMOI_INSTALLER" -- -b "$USER_BIN"
+    # No "--" here: chezmoi's docs use it to separate `sh -c "..."`'s own
+    # implicit $0 from the install script's args, but we're already invoking
+    # the saved file directly, so `-b` must be $1 or the installer's getopts
+    # never sees it (and silently falls through to running plain `chezmoi -b`).
+    sh "$CHEZMOI_INSTALLER" -b "$USER_BIN"
     rm -f "$CHEZMOI_INSTALLER"
     trap - EXIT
 

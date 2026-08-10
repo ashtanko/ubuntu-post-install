@@ -23,14 +23,16 @@ CURRENT_USER="$(whoami)"
 # the same group system/user-groups.sh already adds this user to.
 echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
 
-if command -v wireshark &>/dev/null; then
+if command -v wireshark &>/dev/null && command -v tshark &>/dev/null; then
     echo "✅ Wireshark already installed ($(wireshark --version 2>/dev/null | head -1))"
     echo "🔧 Re-affirming non-root capture permission..."
     sudo dpkg-reconfigure -f noninteractive wireshark-common
 else
-    echo "📦 Installing wireshark..."
+    echo "📦 Installing wireshark + tshark..."
     sudo apt-get update
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y wireshark
+    # tshark isn't pulled in by the wireshark metapackage — install it
+    # explicitly so headless capture/analysis works out of the box.
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y wireshark tshark
 fi
 
 # Belt-and-braces: grant capture rights even if system/user-groups.sh was

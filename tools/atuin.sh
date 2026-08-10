@@ -38,7 +38,13 @@ else
     curl -fsSL --retry 3 --retry-all-errors -o "$ATUIN_INSTALLER" https://setup.atuin.sh
     # The installer offers to edit shell rc files itself; this script does that
     # below with the repo's usual grep-guarded, idempotent approach instead.
-    ATUIN_NO_MODIFY_PATH=1 sh "$ATUIN_INSTALLER" || true
+    #
+    # --non-interactive is required, not just nice-to-have: without it the
+    # installer probes for a controlling terminal via `exec 3</dev/tty`, and
+    # under `sh` (dash) a failed redirect on that special builtin kills the
+    # whole script on the spot — even inside an `if` — whenever there's no
+    # tty (any CI runner, this container). No output, no error, just exit.
+    ATUIN_NO_MODIFY_PATH=1 sh "$ATUIN_INSTALLER" --non-interactive || true
     rm -f "$ATUIN_INSTALLER"
     trap - EXIT
 

@@ -29,7 +29,18 @@ if command -v podman-compose &>/dev/null; then
     echo "✅ podman-compose already installed"
 else
     echo "📦 Installing podman-compose..."
-    sudo apt-get install -y podman-compose
+    sudo apt-get update
+    if apt-cache show podman-compose &>/dev/null; then
+        sudo apt-get install -y podman-compose
+    else
+        # Not packaged on this release (e.g. Ubuntu 22.04/jammy) — fall back to pipx.
+        echo "⚠️  No podman-compose apt package on this release — installing via pipx instead"
+        if ! command -v pipx &>/dev/null; then
+            sudo apt-get install -y pipx
+            pipx ensurepath >/dev/null 2>&1 || true
+        fi
+        pipx install podman-compose
+    fi
 fi
 
 # Rootless Podman needs a subuid/subgid range for the current user. Modern

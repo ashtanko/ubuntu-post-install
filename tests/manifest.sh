@@ -63,7 +63,7 @@ SCRIPTS=(
   "dev/ruby.sh|yes||FILE||\$HOME/.rbenv"
   "dev/gcloud.sh|yes||command -v gcloud && gcloud --version|"
   "dev/azure-cli.sh|yes||command -v az && az version|"
-  "dev/podman.sh|partial||command -v podman && command -v podman-compose|rootless containers need subuid/subgid + user namespaces; the CLI installs and is verified"
+  "dev/podman.sh|partial||command -v podman && PATH=\$HOME/.local/bin:\$PATH command -v podman-compose|rootless containers need subuid/subgid + user namespaces; the CLI installs and is verified"
   "dev/deno.sh|yes||test -x \$HOME/.deno/bin/deno && \$HOME/.deno/bin/deno --version||\$HOME/.deno"
   "dev/bun.sh|yes||test -x \$HOME/.bun/bin/bun && \$HOME/.bun/bin/bun --version||\$HOME/.bun"
   "dev/php.sh|yes||command -v php && command -v composer|"
