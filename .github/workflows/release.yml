@@ -41,7 +41,9 @@ jobs:
           key: buildx-${{ matrix.ubuntu }}-${{ hashFiles('tests/Dockerfile') }}
           restore-keys: |
             buildx-${{ matrix.ubuntu }}-
-      - run: bash tests/run-in-docker.sh ${{ matrix.ubuntu }} smoke
+      - env:
+          DOCKER_BUILD_CACHE_DIR: /tmp/.buildx-cache
+        run: bash tests/run-in-docker.sh ${{ matrix.ubuntu }} smoke
 
   release:
     needs: [lint, smoke]

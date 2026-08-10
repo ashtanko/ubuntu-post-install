@@ -23,6 +23,7 @@ For a source checkout, `.env` is gitignored and is a convenient repo-local confi
 | `NVM_DIR` | [dev/node.sh](../dev/node.sh) | `$HOME/.nvm` | NVM installation directory |
 | `PYENV_ROOT` | [dev/python.sh](../dev/python.sh) | `$HOME/.pyenv` | pyenv installation directory |
 | `GO_INSTALL_DIR` | [dev/go.sh](../dev/go.sh) | `/usr/local/go` | Go SDK extraction target (needs sudo) |
+| `GO_VERSION` | [dev/go.sh](../dev/go.sh) | latest stable | Pins a version (e.g. `go1.23.4`); resolved from upstream when empty |
 | `GO_ARCHIVE_URL` / `GO_ARCHIVE_SHA256` | [dev/go.sh](../dev/go.sh) | official release | Custom archives require an explicit SHA-256 checksum |
 | `JAVA_VERSION` | [dev/java.sh](../dev/java.sh) | interactive prompt (fallback `21`) | OpenJDK major: `8` \| `11` \| `17` \| `21` \| `25` |
 | `DOTNET_VERSION` | [dev/dotnet.sh](../dev/dotnet.sh) | `8.0` | .NET SDK major.minor to install |
@@ -56,10 +57,13 @@ For a source checkout, `.env` is gitignored and is a convenient repo-local confi
 | `VSCODE_EXTENSIONS` | [ide/vscode-extensions.sh](../ide/vscode-extensions.sh) | empty | Whitespace-separated extension IDs; empty = no-op |
 | `JETBRAINS_TOOLBOX_DIR` | [ide/jetbrains-toolbox.sh](../ide/jetbrains-toolbox.sh) | `$HOME/.local/share/JetBrains/Toolbox` | Toolbox install dir |
 | `NVIM_INSTALL_DIR` | [ide/nvim.sh](../ide/nvim.sh) | `$HOME/.local/share/nvim-stable` | Where the Neovim tarball is extracted |
+| `NVIM_VERSION` | [ide/nvim.sh](../ide/nvim.sh) | latest release | Pins a release tag (e.g. `v0.11.4`); resolved from GitHub when empty |
 | `NVIM_ARCHIVE_URL` / `NVIM_ARCHIVE_SHA256` | [ide/nvim.sh](../ide/nvim.sh) | official release | Custom archives require an explicit SHA-256 checksum |
 | `CURSOR_INSTALL_DIR` | [ide/cursor.sh](../ide/cursor.sh) | `$HOME/.local/share/Cursor` | Where the Cursor AppImage is placed |
+| `POSTMAN_INSTALL_DIR` | [apps/postman.sh](../apps/postman.sh) | `$HOME/.local/share/Postman` | Where Postman is extracted; symlinked into `~/.local/bin` |
 | `GPG_KEY_ID` | [system/gpg.sh](../system/gpg.sh) | unique `GIT_EMAIL` match | Select an existing secret key explicitly when email lookup is ambiguous |
 | `ENABLE_GIT_COMMIT_SIGNING` | [tools/git-config.sh](../tools/git-config.sh) | `no` | Flip to `yes` after running [system/gpg.sh](../system/gpg.sh) |
+| `TMUX_PLUGIN_DIR` | [tools/tmux-config.sh](../tools/tmux-config.sh) | `$HOME/.tmux/plugins/tpm` | Where TPM is cloned; never re-fetched on a repeat run |
 | `BACKUP_DIR` | [tools/backup-home.sh](../tools/backup-home.sh) | `$HOME/backups` | Backup tarball destination |
 | `BACKUP_ENCRYPT` | [tools/backup-home.sh](../tools/backup-home.sh) | `no` | `yes` = GPG-encrypt the tarball |
 | `BACKUP_GPG_RECIPIENT` | [tools/backup-home.sh](../tools/backup-home.sh) | `$GIT_EMAIL` | GPG recipient for encrypted backups |
@@ -74,6 +78,7 @@ For a source checkout, `.env` is gitignored and is a convenient repo-local confi
 | `MCP_INSPECTOR_VERSION` | [ai/mcp-inspector.sh](../ai/mcp-inspector.sh) | `latest` | MCP Inspector npm version or dist-tag |
 | `LLM_VERSION` | [ai/llm-cli.sh](../ai/llm-cli.sh) | `latest` | `llm` PyPI release to install |
 | `LITELLM_VERSION` | [ai/litellm.sh](../ai/litellm.sh) | `latest` | LiteLLM PyPI release to install |
+| `OPENCODE_INSTALL_DIR` | [ai/opencode.sh](../ai/opencode.sh) | `$HOME/.opencode` | opencode installation directory |
 | `PROMPT_BACKEND` | [ai/prompt-runner.sh](../ai/prompt-runner.sh) | `ollama` | `ollama` \| `openai` \| `anthropic` |
 | `PROMPT_MODEL` | [ai/prompt-runner.sh](../ai/prompt-runner.sh) | per-backend default | Override the model the `prompt` CLI uses |
 | `OLLAMA_HOST` | [ai/prompt-runner.sh](../ai/prompt-runner.sh), [ai/ollama-models.sh](../ai/ollama-models.sh) | `http://localhost:11434` | Remote Ollama endpoint if not localhost |

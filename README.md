@@ -55,9 +55,11 @@ bash setup.sh
 ```
 
 The terminal UI supports nine categories. Use the arrow keys to navigate, Space
-to select, `a` to select a category, `Ctrl+A` to select everything, and Enter to
-review and install. Installer output and interactive prompts temporarily take
-over the terminal; the interface resumes when each script exits.
+to select, `a` to toggle the current category, `Ctrl+A` to select everything, `x`
+to clear the whole selection, and Enter to review and install. Installer output
+and interactive prompts temporarily take over the terminal; the interface
+resumes when each script exits. On the summary screen, `r` retries the failed
+items and `l` opens the full log.
 
 Use the classic menu when preferred or when diagnosing terminal compatibility:
 
@@ -181,7 +183,10 @@ Every script follows the same shape:
 - Repeat-safe guards (`command -v`, marker, file existence) where the operation supports them
 - Temp files cleaned via `trap 'rm -f "$TMP"' EXIT`
 - Shell config additions written to **both** `~/.zshrc` and `~/.bashrc`, guarded by `grep -q`
+- `apt-get update` before installing any repository package; downloads land in a file and are checksum-verified rather than piped into a shell
 - Emoji legend: 🚀 start · 📦 installing · ✅ success · ❌ error · ⚠️ warning · 💡 tip · 🔧 configuring · 🔍 detecting
+
+The mechanical parts of these conventions are enforced by [tests/script-contract-regression.sh](tests/script-contract-regression.sh), which checks every script — including the ones no Docker stage can execute.
 
 ## Contributing
 

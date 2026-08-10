@@ -105,6 +105,8 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | Script | Purpose |
 |---|---|
 | `zsh.sh` | Zsh + Oh My Zsh; set `INSTALL_OH_MY_ZSH=no` to skip OMZ |
+| `fish.sh` | Fish shell + Fisher plugin manager; `SET_FISH_AS_DEFAULT=no` leaves the login shell alone |
+| `starship.sh` | Starship cross-shell prompt, wired into Bash, Zsh, and Fish |
 | `cli-tools.sh` | bat, fzf, ripgrep, eza, jq, htop, tmux, tree, gh (GitHub CLI) |
 | `modern-cli.sh` | lazygit, delta, zoxide, btop, direnv, fd, dust, hyperfine, tldr (tealdeer) |
 | `btop.sh` | btop — modern resource/process monitor (apt) |
@@ -189,6 +191,11 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 - GPG repo keys: added via `gpg --dearmor` to `/etc/apt/keyrings/` and pinned with `signed-by=` in the apt source
 - Latest GitHub release lookups: use the `latest_github_tag` helper (follows the `github.com/<owner>/<repo>/releases/latest` redirect), never `api.github.com` — unauthenticated API calls are rate-limited per IP and start returning 403 in CI
 - Network fetches: `curl --retry 3 --retry-all-errors`, so one dropped connection doesn't fail the whole script under `set -e`
+- `apt-get update` before every `apt-get install` of a repository package — `/var/lib/apt/lists` is empty on a fresh system and stale on an idle one. Installing a local `.deb` you already downloaded needs no index
+- Never pipe a download into a shell (`curl … | bash`). Fetch to a file, verify the digest where upstream publishes one, then run or install it — see [tools/just.sh](tools/just.sh) for the shape
+- Never end a script with a bare `[[ cond ]] && cmd`: as the last line it exits 1 whenever the condition is false, so setup.sh reports a successful run as FAILED and writes no marker. Use an `if` block
+
+The last three are enforced by [tests/script-contract-regression.sh](tests/script-contract-regression.sh), which runs against every script — including the ~30 that no Docker stage executes.
 
 ## setup.sh Behaviour
 
@@ -216,6 +223,8 @@ Copy `.env.example` to `.env` and fill in your values. `.env` is gitignored. Eve
 | `NVM_DIR` | dev/node.sh | `$HOME/.nvm` |
 | `PYENV_ROOT` | dev/python.sh | `$HOME/.pyenv` |
 | `GO_INSTALL_DIR` | dev/go.sh | `/usr/local/go` |
+| `GO_VERSION` | dev/go.sh | latest stable |
+| `GO_ARCHIVE_URL` / `GO_ARCHIVE_SHA256` | dev/go.sh | official release — a custom URL requires the checksum |
 | `JAVA_VERSION` | dev/java.sh | interactive prompt (fallback `21`) |
 | `DOTNET_VERSION` | dev/dotnet.sh | `8.0` |
 | `RBENV_ROOT` | dev/ruby.sh | `$HOME/.rbenv` |
@@ -224,9 +233,12 @@ Copy `.env.example` to `.env` and fill in your values. `.env` is gitignored. Eve
 | `DENO_INSTALL` | dev/deno.sh | `$HOME/.deno` |
 | `BUN_INSTALL` | dev/bun.sh | `$HOME/.bun` |
 | `INSTALL_OH_MY_ZSH` | tools/zsh.sh | `yes` |
+| `INSTALL_FISHER` | tools/fish.sh | `yes` |
+| `SET_FISH_AS_DEFAULT` | tools/fish.sh | `yes` |
 | `INSTALL_DOCKER_DESKTOP` | dev/docker.sh | `yes` |
 | `SETUP_LOG_FILE` | setup.sh | `$HOME/ubuntu-setup.log` |
 | `SWAP_SIZE_GB` | essentials/swap.sh | `4` |
+| `SWAP_FILE` / `FSTAB_FILE` | essentials/swap.sh | `/swapfile` / `/etc/fstab` |
 | `ENABLE_UFW` | essentials/firewall.sh | `yes` |
 | `ENABLE_AUTO_UPDATES` | essentials/auto-updates.sh | `yes` |
 | `ENABLE_FAIL2BAN` | essentials/fail2ban.sh | `yes` |
@@ -253,6 +265,7 @@ Copy `.env.example` to `.env` and fill in your values. `.env` is gitignored. Eve
 | `MCP_INSPECTOR_VERSION` | ai/mcp-inspector.sh | `latest` |
 | `LLM_VERSION` | ai/llm-cli.sh | `latest` |
 | `LITELLM_VERSION` | ai/litellm.sh | `latest` |
+| `OPENCODE_INSTALL_DIR` | ai/opencode.sh | `$HOME/.opencode` |
 | `PROMPT_BACKEND` | ai/prompt-runner.sh (`prompt` CLI) | `ollama` |
 | `PROMPT_MODEL` | ai/prompt-runner.sh | per-backend default |
 | `OLLAMA_HOST` | ai/prompt-runner.sh, ai/ollama-models.sh | `http://localhost:11434` |
@@ -261,9 +274,13 @@ Copy `.env.example` to `.env` and fill in your values. `.env` is gitignored. Eve
 | `VSCODE_EXTENSIONS` | ide/vscode-extensions.sh | — empty = no-op |
 | `JETBRAINS_TOOLBOX_DIR` | ide/jetbrains-toolbox.sh | `$HOME/.local/share/JetBrains/Toolbox` |
 | `NVIM_INSTALL_DIR` | ide/nvim.sh | `$HOME/.local/share/nvim-stable` |
+| `NVIM_VERSION` | ide/nvim.sh | latest release |
+| `NVIM_ARCHIVE_URL` / `NVIM_ARCHIVE_SHA256` | ide/nvim.sh | official release — a custom URL requires the checksum |
 | `CURSOR_INSTALL_DIR` | ide/cursor.sh | `$HOME/.local/share/Cursor` |
 | `POSTMAN_INSTALL_DIR` | apps/postman.sh | `$HOME/.local/share/Postman` |
 | `ENABLE_GIT_COMMIT_SIGNING` | tools/git-config.sh | `no` |
+| `GPG_KEY_ID` | system/gpg.sh, tools/git-config.sh | — unique `GIT_EMAIL` match |
+| `TMUX_PLUGIN_DIR` | tools/tmux-config.sh | `$HOME/.tmux/plugins/tpm` |
 | `BACKUP_DIR` | tools/backup-home.sh | `$HOME/backups` |
 | `BACKUP_ENCRYPT` | tools/backup-home.sh | `no` |
 | `BACKUP_GPG_RECIPIENT` | tools/backup-home.sh | `$GIT_EMAIL` |

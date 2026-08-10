@@ -45,6 +45,7 @@ GUI applications.
 |---|---|
 | [browsers.sh](../apps/browsers.sh) | Google Chrome (amd64 only; rejected before apt changes on other architectures) |
 | [guake.sh](../apps/guake.sh) | Guake drop-down terminal |
+| [postman.sh](../apps/postman.sh) | Postman API client — official tarball into `$POSTMAN_INSTALL_DIR`, with `~/.local/bin` symlink and `.desktop` entry |
 | [warp.sh](../apps/warp.sh) | Warp terminal (amd64 repository only; rejected before apt changes otherwise) |
 | [vscode.sh](../apps/vscode.sh) | VS Code via Microsoft apt repo |
 | [bitwarden-cli.sh](../apps/bitwarden-cli.sh) | Bitwarden CLI (`bw`) — official Linux zip, amd64 only |
@@ -88,6 +89,7 @@ Shell, CLI, and dev helpers.
 | [starship.sh](../tools/starship.sh) | Starship cross-shell prompt, initialized for installed Bash, Zsh, and Fish shells |
 | [cli-tools.sh](../tools/cli-tools.sh) | bat, fzf, ripgrep, eza, jq, htop, tmux, tree, gh (GitHub CLI) |
 | [modern-cli.sh](../tools/modern-cli.sh) | lazygit, delta, zoxide, btop, direnv, fd, dust, hyperfine, tldr (tealdeer) |
+| [btop.sh](../tools/btop.sh) | btop — modern resource/process monitor (apt) |
 | [fonts.sh](../tools/fonts.sh) | JetBrains Mono, Fira Code, Hack — all Nerd Font variants |
 | [git-config.sh](../tools/git-config.sh) | Opinionated git defaults (rebase pull, autosetup, aliases, global gitignore, optional GPG signing) |
 | [pre-commit-setup.sh](../tools/pre-commit-setup.sh) | pre-commit framework via pipx + git template hook + starter `.pre-commit-config.yaml` |

@@ -20,6 +20,7 @@ if command -v nordvpn >/dev/null 2>&1; then
     echo "✅ NordVPN already installed ($(nordvpn --version 2>/dev/null | head -1))"
 else
     echo "📦 Ensuring curl is present..."
+    sudo apt-get update
     sudo apt-get install -y curl
 
     echo "📦 Downloading and running official NordVPN installer..."

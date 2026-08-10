@@ -29,14 +29,34 @@ Arguments: `[ubuntu_version] [smoke|idempotency] [script_path]`. All optional; s
 ## Lint locally
 
 ```bash
-bash tests/lint.sh                      # shellcheck across all .sh and .bash files
-bash tests/check-manifest-coverage.sh   # ensure every script has a manifest entry
-bash tests/regression.sh                # config, runtime, and installer regressions
-make check                              # complete gate, including Go TUI tests/vet/build
+bash tests/lint.sh                          # shellcheck across all .sh and .bash files
+bash tests/check-manifest-coverage.sh       # ensure every script has a manifest entry
+bash tests/script-contract-regression.sh    # script contracts, incl. scripts Docker never runs
+bash tests/regression.sh                    # config, runtime, and installer regressions
+make check                                  # complete gate, including Go TUI tests/vet/build
 ```
 
 `make check` requires Go 1.25 or newer for the terminal UI. Published installer
 releases contain prebuilt binaries and do not require Go on the target machine.
+
+### Script contracts
+
+About a third of the catalog is `compat=no` — GUI apps, systemd units, block
+devices — so no Docker stage ever executes those scripts, and runtime bugs in
+them reach users unnoticed.
+[script-contract-regression.sh](../tests/script-contract-regression.sh) closes
+that gap for the classes that are detectable without running anything. Every
+script, `compat=no` included, must:
+
+| Rule | Why |
+|---|---|
+| parse under `bash -n` | the only syntax check a `compat=no` script gets |
+| not end in a bare `[[ … ]] && cmd` | as the last line it exits 1 when false, so a successful run is reported as FAILED and writes no completion marker |
+| run `apt-get update` before installing a repo package | `/var/lib/apt/lists` is empty on a fresh system and stale on an idle one; the install dies with `Unable to locate package` |
+| never pipe a network fetch into a shell | a truncated transfer must not half-execute; download to a file and verify the digest where upstream publishes one |
+
+Installing an already-downloaded local `.deb` is exempt from the `apt-get update`
+rule, since that path needs no package index.
 
 [.shellcheckrc](../.shellcheckrc) disables `SC1091` for dynamic shared-helper and verifier paths.
 

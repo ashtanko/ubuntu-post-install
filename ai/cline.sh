@@ -34,6 +34,7 @@ if [ -z "$NODE_BIN" ]; then
     echo "📦 Installing Node.js 22 via the signed NodeSource repository..."
     NODE_KEY=$(mktemp --suffix=.gpg)
     trap 'rm -f "$NODE_KEY"' EXIT
+    sudo apt-get update
     sudo apt-get install -y curl gpg ca-certificates
     curl -fsSL --retry 3 --retry-all-errors \
         https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \

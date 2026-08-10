@@ -30,4 +30,6 @@ jobs:
             buildx-${{ matrix.ubuntu }}-
 
       - name: Run ${{ matrix.stage }} on Ubuntu ${{ matrix.ubuntu }}
+        env:
+          DOCKER_BUILD_CACHE_DIR: /tmp/.buildx-cache
         run: bash tests/run-in-docker.sh ${{ matrix.ubuntu }} ${{ matrix.stage }}

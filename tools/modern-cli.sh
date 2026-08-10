@@ -99,12 +99,26 @@ else
     echo "✅ lazygit installed → $BIN_DIR/lazygit"
 fi
 
-# --- zoxide (official installer; lands in ~/.local/bin) ---
+# --- zoxide (GitHub release .deb) ---
+# Deliberately not upstream's `curl .../main/install.sh | bash`: that pipes a
+# mutable branch URL into a shell. The published .deb comes from an immutable
+# release tag and installs through apt, same shape as the delta fallback above.
 if command -v zoxide &>/dev/null; then
     echo "✅ zoxide already installed"
 else
-    echo "📦 Installing zoxide via official installer..."
-    curl -fsSL --retry 3 --retry-all-errors https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash
+    echo "🔍 Resolving latest zoxide release..."
+    ZOXIDE_VERSION=$(latest_github_tag ajeetdsouza/zoxide)
+    ZOXIDE_NUM=${ZOXIDE_VERSION#v}
+    ZOXIDE_URL="https://github.com/ajeetdsouza/zoxide/releases/download/${ZOXIDE_VERSION}/zoxide_${ZOXIDE_NUM}-1_${ARCH}.deb"
+    echo "📦 Downloading zoxide $ZOXIDE_VERSION..."
+    # zoxide publishes no checksum asset to verify against (fetched over TLS from
+    # github.com); retry protects against a dropped connection, not tampering.
+    ZOXIDE_DEB=$(mktemp --suffix=.deb)
+    trap 'rm -f "$ZOXIDE_DEB"' EXIT
+    wget --tries=3 --waitretry=2 -q --show-progress -O "$ZOXIDE_DEB" "$ZOXIDE_URL"
+    sudo apt-get install -y "$ZOXIDE_DEB"
+    rm -f "$ZOXIDE_DEB"
+    echo "✅ zoxide installed"
 fi
 
 # --- dust (GitHub release) ---

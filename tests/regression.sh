@@ -6,6 +6,7 @@ cd "$REPO_ROOT"
 
 bash tests/config-regression.sh
 bash tests/catalog-regression.sh
+bash tests/script-contract-regression.sh
 bash tests/tui-launcher-regression.sh
 bash tests/runtime-core-regression.sh
 bash tests/installer-regression.sh

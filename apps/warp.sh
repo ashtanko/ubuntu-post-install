@@ -30,6 +30,7 @@ GPG_TMP=$(mktemp --suffix=.gpg)
 trap 'rm -f "$GPG_TMP"' EXIT
 
 echo "📦 Adding Warp GPG key and repository..."
+sudo apt-get update
 sudo apt-get install -y wget gpg
 
 wget --tries=3 --waitretry=2 -qO- https://releases.warp.dev/linux/keys/warp.asc | gpg --dearmor > "$GPG_TMP"

@@ -126,12 +126,13 @@ Keep the label short — the menu wraps on long lines.
 ```bash
 bash tests/lint.sh                                          # shellcheck
 bash tests/check-manifest-coverage.sh                       # manifest coverage
+bash tests/script-contract-regression.sh                    # script contracts
 bash tests/regression.sh                                    # local behavior regressions
 bash tests/run-in-docker.sh 24.04 smoke dev/mytool.sh       # smoke
 bash tests/run-in-docker.sh 24.04 idempotency dev/mytool.sh # idempotency
 ```
 
-If a targeted script is `compat=no`, the runner reports the skip and exits non-zero because no runnable work occurred. Validate that script manually on a suitable host and keep the manifest reason specific.
+If a targeted script is `compat=no`, the runner reports the skip and exits non-zero because no runnable work occurred. Validate that script manually on a suitable host and keep the manifest reason specific. `compat=no` scripts still have to satisfy the [script contracts](TESTING.md#script-contracts) — that check is the only automated coverage they get, so it is deliberately strict about `apt-get update` ordering, trailing bare conditionals, and piping downloads into a shell.
 
 ## CI gates
 

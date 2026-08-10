@@ -34,6 +34,10 @@ if [ ! -f /etc/apt/sources.list.d/microsoft-prod.list ]; then
     sudo apt-get install -y wget ca-certificates
 
     MS_PROD_DEB=""
+    TMP_DEB=""
+    # Cleaned on every exit path — a failed `dpkg -i` below would otherwise
+    # leave the downloaded .deb behind in /tmp.
+    trap 'rm -f "$TMP_DEB"' EXIT
     for CANDIDATE in "$CODENAME_VERSION" 24.04 22.04; do
         URL="https://packages.microsoft.com/config/ubuntu/${CANDIDATE}/packages-microsoft-prod.deb"
         TMP_DEB=$(mktemp --suffix=.deb)

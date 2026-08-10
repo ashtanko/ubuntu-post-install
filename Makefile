@@ -9,7 +9,7 @@ export VERSION
 
 .DEFAULT_GOAL := help
 .PHONY: help lint manifest config-regression runtime-regression installer-regression \
-        regressions check smoke smoke-all \
+        contract-regression regressions check smoke smoke-all \
         idempotency idempotency-all setup version tui-test tui-build tag dist release-artifact \
         release-dry-run clean clean-markers
 
@@ -38,6 +38,9 @@ runtime-regression: ## Verify runtime safety and transactional install behavior
 
 installer-regression: ## Verify installer edge cases and failure reporting
 	bash tests/installer-regression.sh
+
+contract-regression: ## Verify script contracts, incl. scripts Docker never runs
+	bash tests/script-contract-regression.sh
 
 regressions: ## Run all fast local regression checks
 	bash tests/regression.sh
