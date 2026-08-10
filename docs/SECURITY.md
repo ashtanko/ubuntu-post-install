@@ -112,6 +112,11 @@ Each repo's signature is pinned to its own keyring file via `signed-by=`. Removi
 - [ai/cline.sh](../ai/cline.sh), [ai/llm-cli.sh](../ai/llm-cli.sh), [ai/litellm.sh](../ai/litellm.sh), and [ai/mcp-inspector.sh](../ai/mcp-inspector.sh) install third-party packages from npm or PyPI. The wrappers do not configure credentials; review each tool's provider, telemetry, and local-execution settings before use.
 - Coding agents can read and modify files or execute commands after approval. MCP Inspector starts local services (ports 6274 and 6277 by default), while LiteLLM starts an API proxy (port 4000 by default); do not expose them to untrusted networks without authentication and access controls.
 
+## Shell frameworks and prompts
+
+- [tools/zsh.sh](../tools/zsh.sh), [tools/fish.sh](../tools/fish.sh), and [tools/starship.sh](../tools/starship.sh) download the official Oh My Zsh, Fisher, and Starship bootstrap scripts over TLS into temporary files before executing them. These upstream scripts are not independently signed by this repository.
+- The shell installers edit the selected user's login shell and/or shell startup files. Review `~/.zshrc`, `~/.config/fish`, and the Starship init blocks if you later switch frameworks or prompts.
+
 ## Telemetry
 
 These scripts don't phone home. Upstream installers do whatever they do — Google Chrome, Docker Desktop, JetBrains Toolbox, VS Code, and the vendor AI CLIs each have their own opt-out paths in their own settings. Review them after install if that matters to you.

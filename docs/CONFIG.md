@@ -26,6 +26,8 @@ For a source checkout, `.env` is gitignored and is a convenient repo-local confi
 | `GO_ARCHIVE_URL` / `GO_ARCHIVE_SHA256` | [dev/go.sh](../dev/go.sh) | official release | Custom archives require an explicit SHA-256 checksum |
 | `JAVA_VERSION` | [dev/java.sh](../dev/java.sh) | interactive prompt (fallback `21`) | OpenJDK major: `8` \| `11` \| `17` \| `21` \| `25` |
 | `INSTALL_OH_MY_ZSH` | [tools/zsh.sh](../tools/zsh.sh) | `yes` | Set `no` to install plain Zsh only |
+| `INSTALL_FISHER` | [tools/fish.sh](../tools/fish.sh) | `yes` | Set `no` to install plain Fish only |
+| `SET_FISH_AS_DEFAULT` | [tools/fish.sh](../tools/fish.sh) | `yes` | Set `no` to leave the current login shell unchanged |
 | `INSTALL_DOCKER_DESKTOP` | [dev/docker.sh](../dev/docker.sh) | `yes` | Set `no` to skip the Docker Desktop GUI |
 | `SETUP_LOG_FILE` | [setup.sh](../setup.sh) | `$HOME/ubuntu-setup.log` | Where the master installer appends timestamped output |
 | `SWAP_SIZE_GB` | [essentials/swap.sh](../essentials/swap.sh) | `4` | Skipped if any swap is already active |

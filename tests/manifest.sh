@@ -61,9 +61,11 @@ SCRIPTS=(
   "tools/btop.sh|yes||FILE|"
   "tools/cli-tools.sh|yes||FILE|"
   "tools/fonts.sh|yes||test -n \"\$(find \$HOME/.local/share/fonts -type f -print -quit 2>/dev/null)\"||\$HOME/.local/share/fonts"
+  "tools/fish.sh|yes|SET_FISH_AS_DEFAULT=no|FILE||\$HOME/.config/fish"
   "tools/git-config.sh|yes|GIT_NAME=CI Tester,GIT_EMAIL=ci@example.com|git config --global --get pull.rebase||\$HOME/.gitconfig,\$HOME/.config/git"
   "tools/modern-cli.sh|yes||FILE|"
   "tools/pre-commit-setup.sh|yes||bash -lc 'command -v pre-commit'||\$HOME/.config/pre-commit,\$HOME/.config/git/template"
+  "tools/starship.sh|yes||FILE||\$HOME/.config/fish"
   "tools/system-maintenance.sh|partial||test -d /var/cache/apt/archives|journalctl/snap/flatpak may be absent; available maintenance steps still run"
   "tools/zsh.sh|yes|INSTALL_OH_MY_ZSH=no|command -v zsh||\$HOME/.oh-my-zsh"
 

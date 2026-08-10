@@ -68,6 +68,8 @@ Every script is independent and can be run on its own:
 ```bash
 bash dev/node.sh
 bash tools/zsh.sh
+bash tools/fish.sh
+bash tools/starship.sh
 bash ai/ollama.sh
 ```
 
@@ -83,7 +85,7 @@ Browse [docs/SCRIPTS.md](docs/SCRIPTS.md) for the complete inventory. Categories
 | [system/](system/) | Foundations: apt upgrade + build tools, hostname, user groups, NTP, DNS, sudo timeout, keyboard remap (keyd), GPG key, SSH key |
 | [apps/](apps/) | GUI apps: Chrome, Guake, Warp, VS Code |
 | [dev/](dev/) | Runtimes: Java, Docker, Flutter, Node (NVM), Python (pyenv), Rust, Go |
-| [tools/](tools/) | Shell + CLI: Zsh + Oh My Zsh, bat/fzf/rg/eza/jq, Nerd Fonts, git config, pre-commit, backup, maintenance |
+| [tools/](tools/) | Shell + CLI: Zsh/Oh My Zsh, Fish/Fisher, Starship, bat/fzf/rg/eza/jq, Nerd Fonts, git config, pre-commit, backup, maintenance |
 | [ide/](ide/) | Editors: Zed, Neovim, JetBrains Toolbox, VS Code extensions |
 | [ai/](ai/) | LLM tooling: local inference, coding agents, provider-neutral CLIs, LiteLLM gateway, Fabric workflows, and MCP Inspector |
 | [software/](software/) | Virtualization: VirtualBox, GNOME Boxes/virt-manager, VMware prereqs |
@@ -99,6 +101,8 @@ Scripts load configuration through `lib/config.bash`; every variable is optional
 | `GIT_NAME`, `GIT_EMAIL` | Identity for git config, GPG key, SSH key (interactive prompt if unset) |
 | `SWAP_SIZE_GB` | Swap file size in GB (default `4`) |
 | `INSTALL_OH_MY_ZSH` | `yes`/`no` — toggle Oh My Zsh in `tools/zsh.sh` |
+| `INSTALL_FISHER` | `yes`/`no` — toggle Fisher in `tools/fish.sh` |
+| `SET_FISH_AS_DEFAULT` | `yes`/`no` — make Fish the login shell |
 | `INSTALL_DOCKER_DESKTOP` | `yes`/`no` — toggle the Desktop GUI in `dev/docker.sh` |
 | `VSCODE_EXTENSIONS` | Whitespace-separated extension IDs for `ide/vscode-extensions.sh` |
 | `PROMPT_BACKEND` | `ollama` / `openai` / `anthropic` for `ai/prompt-runner.sh` |

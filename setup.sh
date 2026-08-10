@@ -119,6 +119,8 @@ declare -a DEV_ITEMS=(
 # shellcheck disable=SC2034
 declare -a TOOLS_ITEMS=(
     "Zsh + Oh My Zsh|tools/zsh.sh"
+    "Fish shell + Fisher plugin manager|tools/fish.sh"
+    "Starship cross-shell prompt|tools/starship.sh"
     "CLI tools (bat, fzf, rg, eza, jq, gh...)|tools/cli-tools.sh"
     "Modern CLI extras (lazygit, delta, zoxide, btop...)|tools/modern-cli.sh"
     "btop (resource monitor)|tools/btop.sh"
