@@ -34,8 +34,21 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 tar -xzf "$TARBALL" -C "$TMP"
 [[ -f "$TMP/$ROOT/lib/config.bash" ]] || { echo "❌ config helper missing from artifact"; exit 1; }
+[[ -f "$TMP/$ROOT/config/catalog.txt" ]] || { echo "❌ installer catalog missing from artifact"; exit 1; }
+[[ -x "$TMP/$ROOT/bin/ubuntu-post-install-tui-amd64" ]] || { echo "❌ amd64 TUI missing from artifact"; exit 1; }
+[[ -x "$TMP/$ROOT/bin/ubuntu-post-install-tui-arm64" ]] || { echo "❌ arm64 TUI missing from artifact"; exit 1; }
 [[ "$(bash "$TMP/$ROOT/setup.sh" --version)" == *"$SEMVER"* ]] || { echo "❌ embedded setup version mismatch"; exit 1; }
 bash -n "$DIST_DIR/install.sh" "$TMP/$ROOT/setup.sh" "$TMP/$ROOT/lib/config.bash"
+
+case "$(uname -m)" in
+    x86_64|amd64) HOST_TUI="$TMP/$ROOT/bin/ubuntu-post-install-tui-amd64" ;;
+    aarch64|arm64) HOST_TUI="$TMP/$ROOT/bin/ubuntu-post-install-tui-arm64" ;;
+    *) HOST_TUI="" ;;
+esac
+if [ -n "$HOST_TUI" ]; then
+    "$HOST_TUI" --root "$TMP/$ROOT" --catalog "$TMP/$ROOT/config/catalog.txt" \
+        --marker-dir "$TMP/markers" --log-file "$TMP/setup.log" --check >/dev/null
+fi
 
 INSTALL_HOME="$TMP/install-home"
 mkdir -p "$INSTALL_HOME"
@@ -44,6 +57,8 @@ HOME="$INSTALL_HOME" PREFIX="$INSTALL_HOME/prefix" BIN_DIR="$INSTALL_HOME/bin" \
     bash "$DIST_DIR/install.sh" >/dev/null
 [[ -L "$INSTALL_HOME/bin/ubuntu-post-install" ]] || { echo "❌ remote installer did not create its managed link"; exit 1; }
 [[ -f "$INSTALL_HOME/prefix/$SEMVER/lib/config.bash" ]] || { echo "❌ remote installer omitted the config helper"; exit 1; }
+[[ -x "$INSTALL_HOME/prefix/$SEMVER/bin/ubuntu-post-install-tui-amd64" ]] \
+    || { echo "❌ remote installer omitted the amd64 TUI"; exit 1; }
 LAUNCHER="$INSTALL_HOME/bin/ubuntu-post-install"
 [[ "$("$LAUNCHER" --version)" == *"$SEMVER"* ]] || { echo "❌ installed launcher version mismatch"; exit 1; }
 

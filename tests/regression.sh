@@ -5,6 +5,8 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 bash tests/config-regression.sh
+bash tests/catalog-regression.sh
+bash tests/tui-launcher-regression.sh
 bash tests/runtime-core-regression.sh
 bash tests/installer-regression.sh
 bash tests/release-metadata-regression.sh

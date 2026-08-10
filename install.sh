@@ -131,6 +131,7 @@ cat <<EOF
   Next steps:
     1. (optional) cp $INSTALL_DIR/.env.example ${UBUNTU_POST_INSTALL_CONFIG:-$HOME/.env-ubuntu-post-install}
     2. ubuntu-post-install --version
-    3. ubuntu-post-install            # launches the interactive menu
+    3. ubuntu-post-install            # launches the full-screen terminal installer
+       ubuntu-post-install --classic  # optional classic Bash menu
 
 EOF

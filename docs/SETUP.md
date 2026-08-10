@@ -1,13 +1,37 @@
 # `setup.sh` — How the installer works
 
-[setup.sh](../setup.sh) is an interactive menu wrapped around the same scripts you can also run directly. This page documents the orchestration: input syntax, marker files, log layout, and how to resume after a partial run.
+[setup.sh](../setup.sh) launches a full-screen terminal UI when a packaged binary and an interactive terminal are available. It automatically falls back to the classic Bash menu for redirected input/output, unsupported architectures, `TERM=dumb`, or explicit `--classic` runs. Both interfaces use [the same installer catalog](../config/catalog.txt), markers, logs, and script runner.
+
+## Full-screen terminal UI
+
+Run `ubuntu-post-install` and use:
+
+| Key | Effect |
+|---|---|
+| `←` / `→` | Change category |
+| `↑` / `↓` | Move through items |
+| `Space` | Select or deselect an item |
+| `a` | Select or clear the current category |
+| `Ctrl+A` | Select everything |
+| `x` | Clear the selection |
+| `Enter` | Review selections or begin installation |
+| `r` | Retry failed items from the summary |
+| `l` | Open the complete log from the summary |
+
+Each selected script receives the real terminal while it runs. This preserves
+normal `sudo`, GPG, SSH, and other interactive prompts without allowing the TUI
+to read or store passwords. Pressing `Ctrl+C` during a child script stops the
+current run and returns to the summary.
+
+The packaged release includes native Linux binaries for amd64 and arm64. The
+classic menu remains available with `ubuntu-post-install --classic`.
 
 ## Flow
 
 1. **Bash re-exec shim** — re-execs under bash if invoked via `sh`, so dash-isms in the menu code don't break.
 2. **Configuration is loaded** with precedence `environment > repo .env > ~/.env-ubuntu-post-install`; config-only secrets are not automatically exported to child processes.
 3. **Marker directory** is created at `~/.cache/ubuntu-setup/`.
-4. **Nine category menus** are printed in order: Essentials → System → Apps → Dev → Tools → IDE → AI → Software → VPN. You select items per category.
+4. **Nine category menus** are read from `config/catalog.txt` in order: Essentials → System → Apps → Development → Terminal Tools → IDEs → AI Tools → Virtualization → VPN. You select items per category.
 5. **Confirmation** — selections are echoed back; press `Y` (default) to proceed, `n` to abort.
 6. **Run loop** — each selected script is invoked via `bash`, with stdout+stderr `tee`'d to the log.
 7. **Summary** — pass / fail / skipped counts; non-zero exit code if any script failed.

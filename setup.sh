@@ -12,12 +12,42 @@ SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 # Replaced at release time by .github/workflows/release.yml
 VERSION="dev"
 
+MODE="auto"
+RUN_ITEM=""
+
 case "${1:-}" in
     -v|--version)
         echo "ubuntu-post-install $VERSION"
         exit 0
         ;;
+    --classic)
+        MODE="classic"
+        shift
+        ;;
+    --run-item)
+        [ "$#" -eq 2 ] || { echo "usage: ubuntu-post-install --run-item <script>" >&2; exit 2; }
+        MODE="run-item"
+        RUN_ITEM="$2"
+        shift 2
+        ;;
+    -h|--help)
+        cat <<'EOF'
+Usage: ubuntu-post-install [--classic | --run-item <script> | --version]
+
+  (no arguments)       launch the full-screen installer when available
+  --classic            use the original category-by-category menu
+  --run-item <script>  run one catalogued script (used by the TUI)
+  --version             print the installed version
+EOF
+        exit 0
+        ;;
+    "") ;;
+    *)
+        echo "unknown option: $1" >&2
+        exit 2
+        ;;
 esac
+[ "$#" -eq 0 ] || { echo "unexpected arguments: $*" >&2; exit 2; }
 
 # Load user config before LOG_FILE is set so SETUP_LOG_FILE is available.
 CONFIG_HELPER="$SCRIPT_DIR/lib/config.bash"
@@ -27,6 +57,7 @@ load_config "$SCRIPT_DIR"
 
 LOG_FILE="${SETUP_LOG_FILE:-$HOME/ubuntu-setup.log}"
 MARKER_DIR="$HOME/.cache/ubuntu-setup"
+CATALOG_FILE="$SCRIPT_DIR/config/catalog.txt"
 
 mkdir -p "$MARKER_DIR"
 
@@ -55,7 +86,11 @@ run_script() {
         return
     fi
 
-    log "\n$(date '+%Y-%m-%d %H:%M:%S') ▶ Running: $label"
+    if [ -n "${UPI_PROGRESS:-}" ]; then
+        log "\n$(date '+%Y-%m-%d %H:%M:%S') ▶ [$UPI_PROGRESS] Running: $label"
+    else
+        log "\n$(date '+%Y-%m-%d %H:%M:%S') ▶ Running: $label"
+    fi
     if bash "$SCRIPT_DIR/$script" 2>&1 | tee -a "$LOG_FILE"; then
         touch "$marker"
         success "$label complete"
@@ -66,111 +101,84 @@ run_script() {
     fi
 }
 
-# Menu items: "Label|script/path.sh".
-# Each *_ITEMS array is consumed by select_items via `local -n` namerefs (linter
-# can't trace these, hence the SC2034 disables on each declaration).
-# shellcheck disable=SC2034
-declare -a ESSENTIALS_ITEMS=(
-    "Swap file|essentials/swap.sh"
-    "UFW firewall|essentials/firewall.sh"
-    "Unattended security updates|essentials/auto-updates.sh"
-    "Locale + timezone|essentials/locale-timezone.sh"
-    "GNOME quality-of-life settings|essentials/gnome-settings.sh"
-    "Journal log size cap|essentials/journald.sh"
-    "SSD/NVMe periodic TRIM|essentials/fstrim.sh"
-    "Disable motd-news ads|essentials/motd-news.sh"
-    "inotify + open-file limits|essentials/sysctl-limits.sh"
-    "System info dump|essentials/system-info.sh"
-)
-# shellcheck disable=SC2034
-declare -a SYSTEM_ITEMS=(
-    "Base system (apt upgrade, build tools, git)|system/base.sh"
-    "Hostname|system/hostname.sh"
-    "User groups (docker, dialout, plugdev...)|system/user-groups.sh"
-    "Time sync (NTP)|system/ntp.sh"
-    "DNS resolvers (systemd-resolved)|system/hosts-dns.sh"
-    "Sudo timestamp timeout (opt-in)|system/sudoers.sh"
-    "Keyboard remapping (keyd macOS-style)|system/keyboard.sh"
-    "GPG key + git signing|system/gpg.sh"
-    "SSH key generation|system/ssh.sh"
-)
-# shellcheck disable=SC2034
-declare -a APPS_ITEMS=(
-    "Google Chrome|apps/browsers.sh"
-    "Guake terminal|apps/guake.sh"
-    "Postman|apps/postman.sh"
-    "Warp terminal|apps/warp.sh"
-    "Visual Studio Code|apps/vscode.sh"
-)
-# shellcheck disable=SC2034
-declare -a DEV_ITEMS=(
-    "Java (OpenJDK 8/11/17/21/25)|dev/java.sh"
-    "Docker Engine + Docker Desktop|dev/docker.sh"
-    "Flutter SDK + Linux desktop|dev/flutter.sh"
-    "Node.js (via NVM)|dev/node.sh"
-    "Python 3 + pyenv + poetry|dev/python.sh"
-    "Rust (via rustup)|dev/rust.sh"
-    "Go SDK|dev/go.sh"
-    "Databases (psql, redis, mysql, sqlite + pgcli/mycli)|dev/databases.sh"
-    "Kubernetes (kubectl, helm, k9s, kind, kustomize)|dev/kubernetes.sh"
-    "AWS CLI v2 + Session Manager plugin|dev/aws-cli.sh"
-    "Terraform + tflint + tfsec|dev/terraform.sh"
-)
-# shellcheck disable=SC2034
-declare -a TOOLS_ITEMS=(
-    "Zsh + Oh My Zsh|tools/zsh.sh"
-    "Fish shell + Fisher plugin manager|tools/fish.sh"
-    "Starship cross-shell prompt|tools/starship.sh"
-    "CLI tools (bat, fzf, rg, eza, jq, gh...)|tools/cli-tools.sh"
-    "Modern CLI extras (lazygit, delta, zoxide, btop...)|tools/modern-cli.sh"
-    "btop (resource monitor)|tools/btop.sh"
-    "Developer Nerd Fonts|tools/fonts.sh"
-    "Git config (aliases, defaults, signing)|tools/git-config.sh"
-    "pre-commit framework|tools/pre-commit-setup.sh"
-    "Backup home (manual; configure in .env)|tools/backup-home.sh"
-    "System maintenance (clean caches/logs)|tools/system-maintenance.sh"
-)
-# shellcheck disable=SC2034
-declare -a IDE_ITEMS=(
-    "Zed editor|ide/zed.sh"
-    "VS Code extensions (from .env)|ide/vscode-extensions.sh"
-    "JetBrains Toolbox|ide/jetbrains-toolbox.sh"
-    "Neovim (latest)|ide/nvim.sh"
-)
-# shellcheck disable=SC2034
-declare -a AI_ITEMS=(
-    "Ollama (local LLMs)|ai/ollama.sh"
-    "Ollama models (from .env)|ai/ollama-models.sh"
-    "llama.cpp (build from source)|ai/llama-cpp.sh"
-    "Claude Code CLI|ai/claude.sh"
-    "OpenAI Codex CLI|ai/codex.sh"
-    "Gemini CLI|ai/gemini.sh"
-    "GitHub Copilot CLI|ai/github-copilot.sh"
-    "Hugging Face CLI|ai/huggingface-cli.sh"
-    "Aider|ai/aider.sh"
-    "goose CLI|ai/goose.sh"
-    "Qwen Code|ai/qwen-code.sh"
-    "Cursor Agent CLI|ai/cursor-agent.sh"
-    "Mistral Vibe CLI|ai/mistral-vibe.sh"
-    "Cline CLI|ai/cline.sh"
-    "Fabric prompt workflows|ai/fabric.sh"
-    "LLM CLI (multi-provider)|ai/llm-cli.sh"
-    "LiteLLM proxy CLI|ai/litellm.sh"
-    "MCP Inspector|ai/mcp-inspector.sh"
-    "Antigravity|ai/antigravity.sh"
-    "opencode|ai/opencode.sh"
-    "prompt-runner (universal LLM CLI)|ai/prompt-runner.sh"
-)
-# shellcheck disable=SC2034
-declare -a SOFTWARE_ITEMS=(
-    "VirtualBox|software/virtualbox.sh"
-    "GNOME Boxes + virt-manager|software/boxes.sh"
-    "VMware Workstation prereqs|software/vmware.sh"
-)
-# shellcheck disable=SC2034
-declare -a VPN_ITEMS=(
-    "NordVPN|vpn/nord.sh"
-)
+declare -a CATALOG_CATEGORY_IDS=()
+declare -A CATALOG_CATEGORY_LABELS=()
+declare -A CATALOG_CATEGORY_SEEN=()
+
+load_catalog() {
+    local category_id category_label label script array_name
+    [ -f "$CATALOG_FILE" ] || { fail "Missing installer catalog: $CATALOG_FILE"; exit 1; }
+
+    while IFS='|' read -r category_id category_label label script; do
+        [[ -z "$category_id" || "$category_id" == \#* ]] && continue
+        [[ "$category_id" =~ ^[a-z][a-z0-9-]*$ ]] || { fail "Invalid category id: $category_id"; exit 1; }
+        [[ -n "$category_label" && -n "$label" && -n "$script" ]] \
+            || { fail "Invalid catalog row for category: $category_id"; exit 1; }
+        [[ "$script" != /* && "$script" != *".."* && -f "$SCRIPT_DIR/$script" ]] \
+            || { fail "Invalid catalog script: $script"; exit 1; }
+
+        array_name="CATALOG_ITEMS_${category_id//-/_}"
+        if [ -z "${CATALOG_CATEGORY_SEEN[$category_id]:-}" ]; then
+            CATALOG_CATEGORY_IDS+=("$category_id")
+            CATALOG_CATEGORY_LABELS["$category_id"]="$category_label"
+            CATALOG_CATEGORY_SEEN["$category_id"]=yes
+            declare -g -a "$array_name=()"
+        elif [ "${CATALOG_CATEGORY_LABELS[$category_id]}" != "$category_label" ]; then
+            fail "Conflicting labels for catalog category: $category_id"
+            exit 1
+        fi
+
+        local -n category_items="$array_name"
+        category_items+=("$label|$script")
+    done < "$CATALOG_FILE"
+
+    [ "${#CATALOG_CATEGORY_IDS[@]}" -gt 0 ] || { fail "Installer catalog is empty"; exit 1; }
+}
+
+catalog_label_for_script() {
+    local wanted="$1" category_id array_name entry
+    for category_id in "${CATALOG_CATEGORY_IDS[@]}"; do
+        array_name="CATALOG_ITEMS_${category_id//-/_}"
+        local -n lookup_items="$array_name"
+        for entry in "${lookup_items[@]}"; do
+            if [ "${entry##*|}" = "$wanted" ]; then
+                printf '%s\n' "${entry%%|*}"
+                return 0
+            fi
+        done
+    done
+    return 1
+}
+
+load_catalog
+
+if [ "$MODE" = "run-item" ]; then
+    if ! RUN_LABEL="$(catalog_label_for_script "$RUN_ITEM")"; then
+        fail "Script is not in the installer catalog: $RUN_ITEM"
+        exit 2
+    fi
+    run_script "$RUN_LABEL" "$RUN_ITEM"
+    if [ "${RESULTS[$RUN_LABEL]}" = "failed" ]; then
+        exit 1
+    fi
+    exit 0
+fi
+
+case "$(uname -m)" in
+    x86_64|amd64) TUI_ARCH="amd64" ;;
+    aarch64|arm64) TUI_ARCH="arm64" ;;
+    *) TUI_ARCH="" ;;
+esac
+TUI_BIN="$SCRIPT_DIR/bin/ubuntu-post-install-tui-$TUI_ARCH"
+if [ "$MODE" = "auto" ] && [ -n "$TUI_ARCH" ] && [ -t 0 ] && [ -t 1 ] \
+    && [ "${TERM:-dumb}" != "dumb" ] && [ -x "$TUI_BIN" ]; then
+    exec "$TUI_BIN" \
+        --root "$SCRIPT_DIR" \
+        --catalog "$CATALOG_FILE" \
+        --marker-dir "$MARKER_DIR" \
+        --log-file "$LOG_FILE" \
+        --version "$VERSION"
+fi
 
 print_menu() {
     local -n _items=$1
@@ -226,15 +234,10 @@ read -r
 
 declare -a QUEUE=()
 
-select_items ESSENTIALS_ITEMS "🧱 Essentials" QUEUE
-select_items SYSTEM_ITEMS     "⚙️  System"   QUEUE
-select_items APPS_ITEMS       "🖥️  Apps"     QUEUE
-select_items DEV_ITEMS        "🛠️  Dev"      QUEUE
-select_items TOOLS_ITEMS      "🔧 Tools"    QUEUE
-select_items IDE_ITEMS        "📝 IDE"      QUEUE
-select_items AI_ITEMS         "🤖 AI"       QUEUE
-select_items SOFTWARE_ITEMS   "💿 Software" QUEUE
-select_items VPN_ITEMS        "🔐 VPN"      QUEUE
+for category_id in "${CATALOG_CATEGORY_IDS[@]}"; do
+    items_name="CATALOG_ITEMS_${category_id//-/_}"
+    select_items "$items_name" "${CATALOG_CATEGORY_LABELS[$category_id]}" QUEUE
+done
 
 if [ ${#QUEUE[@]} -eq 0 ]; then
     warn "Nothing selected — exiting"

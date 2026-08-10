@@ -19,6 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
       - run: sudo apt-get update && sudo apt-get install -y shellcheck
       - run: make check
 
@@ -48,6 +51,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
       - name: Resolve version
         id: ver
         env:
@@ -62,6 +69,9 @@ jobs:
           echo "tag=$TAG"               >> "$GITHUB_OUTPUT"
           echo "semver=$SEMVER"         >> "$GITHUB_OUTPUT"
           echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Build terminal UI
+        run: make tui-build
 
       - name: Stage release tree
         env:

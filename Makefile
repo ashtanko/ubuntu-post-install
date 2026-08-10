@@ -10,7 +10,7 @@ export VERSION
 .DEFAULT_GOAL := help
 .PHONY: help lint manifest config-regression runtime-regression installer-regression \
         regressions check smoke smoke-all \
-        idempotency idempotency-all setup version tag dist release-artifact \
+        idempotency idempotency-all setup version tui-test tui-build tag dist release-artifact \
         release-dry-run clean clean-markers
 
 help: ## Show this help
@@ -42,7 +42,22 @@ installer-regression: ## Verify installer edge cases and failure reporting
 regressions: ## Run all fast local regression checks
 	bash tests/regression.sh
 
-check: lint manifest regressions ## Run all static and regression checks
+check: lint manifest regressions tui-test ## Run all static and regression checks
+
+tui-test: ## Format-check, test, vet, and compile the terminal UI
+	@test -z "$$(gofmt -l cmd/ubuntu-post-install-tui)" \
+		|| { echo "Go files need formatting:"; gofmt -l cmd/ubuntu-post-install-tui; exit 1; }
+	go test ./cmd/ubuntu-post-install-tui
+	go vet ./cmd/ubuntu-post-install-tui
+	go build -o /tmp/ubuntu-post-install-tui-check ./cmd/ubuntu-post-install-tui
+	/tmp/ubuntu-post-install-tui-check --root . --catalog config/catalog.txt --check
+
+tui-build: ## Build release TUI binaries for Linux amd64 and arm64
+	@mkdir -p bin
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags='-s -w' \
+		-o bin/ubuntu-post-install-tui-amd64 ./cmd/ubuntu-post-install-tui
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags='-s -w' \
+		-o bin/ubuntu-post-install-tui-arm64 ./cmd/ubuntu-post-install-tui
 
 # ── Docker tests ─────────────────────────────────────────────────────────────
 
@@ -90,6 +105,7 @@ tag: ## Cut and push a release tag (make tag VERSION=1.0.0)
 	@echo "  https://github.com/ashtanko/ubuntu-post-install/actions/workflows/release.yml"
 
 dist: clean ## Build the release tarball locally (mirrors release.yml; no upload)
+	@$(MAKE) tui-build
 	@set -euo pipefail; \
 	VERSION_LOCAL=$$(git describe --tags --exact-match 2>/dev/null \
 		|| git describe --tags --abbrev=0 2>/dev/null \
@@ -118,3 +134,4 @@ release-dry-run: check release-artifact ## Run checks and verify a tarball — n
 
 clean: ## Remove build artifacts
 	rm -rf dist/
+	rm -f bin/ubuntu-post-install-tui-amd64 bin/ubuntu-post-install-tui-arm64

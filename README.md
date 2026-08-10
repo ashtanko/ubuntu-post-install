@@ -7,7 +7,8 @@ Automated shell scripts to provision a fresh Ubuntu installation with a develope
 
 ## Highlights
 
-- **Interactive menu installer** — pick categories and individual scripts; nothing runs without your say-so.
+- **Full-screen terminal installer** — a responsive ANSI interface with categorized selection, progress, retry, and a final result summary.
+- **Classic fallback** — redirected output, unsupported terminals, and `--classic` keep the original Bash menu available.
 - **Re-run tested** — runnable container-compatible scripts execute twice and must preserve configured state snapshots.
 - **Configurable** — inherited environment variables override repo `.env`, which overrides `~/.env-ubuntu-post-install`.
 - **Resumable** — completed steps are tracked under `~/.cache/ubuntu-setup/`; full timestamped log at `~/ubuntu-setup.log`.
@@ -20,6 +21,7 @@ Automated shell scripts to provision a fresh Ubuntu installation with a develope
 - `sudo` privileges (you'll be prompted as needed)
 - Network access for package downloads
 - `amd64` for Google Chrome and Warp; their scripts reject other architectures before changing apt state
+- Go 1.25+ only when building the terminal UI from source; published releases include prebuilt binaries
 
 ## Quick install
 
@@ -28,7 +30,7 @@ Install the latest release without cloning the repo:
 ```bash
 curl -fsSL https://github.com/ashtanko/ubuntu-post-install/releases/latest/download/install.sh | bash
 ubuntu-post-install --version          # confirm install
-ubuntu-post-install                    # launch the interactive menu
+ubuntu-post-install                    # launch the full-screen terminal installer
 ```
 
 Pin a specific version:
@@ -48,10 +50,22 @@ cd ubuntu-post-install
 cp .env.example .env      # optional but recommended
 $EDITOR .env              # set GIT_NAME, GIT_EMAIL, etc.
 
+make tui-build             # optional when working from source; requires Go
 bash setup.sh
 ```
 
-The installer walks you through nine categories. For each one you can select:
+The terminal UI supports nine categories. Use the arrow keys to navigate, Space
+to select, `a` to select a category, `Ctrl+A` to select everything, and Enter to
+review and install. Installer output and interactive prompts temporarily take
+over the terminal; the interface resumes when each script exits.
+
+Use the classic menu when preferred or when diagnosing terminal compatibility:
+
+```bash
+ubuntu-post-install --classic
+```
+
+The classic installer walks through the same catalog. For each category you can select:
 
 | Input | Effect |
 |---|---|
@@ -174,9 +188,10 @@ Every script follows the same shape:
 See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for the full guide. TL;DR:
 
 1. Follow the script conventions above.
-2. Add a row for any new script to [tests/manifest.sh](tests/manifest.sh) — it's the single source of truth for compatibility, env vars, and verification commands.
-3. Optional: add a multi-line verification under `tests/verify/<category>_<name>.sh`.
-4. Run `make check` before opening a PR.
+2. Add the user-facing label and category to [config/catalog.txt](config/catalog.txt).
+3. Add a row to [tests/manifest.sh](tests/manifest.sh) for compatibility, env vars, and verification commands.
+4. Optional: add a multi-line verification under `tests/verify/<category>_<name>.sh`.
+5. Run `make check` before opening a PR.
 
 CI will reject PRs that add scripts without manifest entries.
 

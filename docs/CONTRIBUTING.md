@@ -79,7 +79,7 @@ Then add a row to [docs/CONFIG.md](CONFIG.md) and the matching commented-out lin
 
 ## Test wiring
 
-Every script in the repo has a row in [tests/manifest.sh](../tests/manifest.sh). CI rejects PRs without one (enforced by `tests/check-manifest-coverage.sh`).
+Every selectable script has a user-facing row in [config/catalog.txt](../config/catalog.txt), and every script in the repo has a row in [tests/manifest.sh](../tests/manifest.sh). CI rejects missing or stale entries.
 
 Format:
 

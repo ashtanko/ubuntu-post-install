@@ -32,8 +32,11 @@ Arguments: `[ubuntu_version] [smoke|idempotency] [script_path]`. All optional; s
 bash tests/lint.sh                      # shellcheck across all .sh and .bash files
 bash tests/check-manifest-coverage.sh   # ensure every script has a manifest entry
 bash tests/regression.sh                # config, runtime, and installer regressions
-make check                              # run the complete local gate
+make check                              # complete gate, including Go TUI tests/vet/build
 ```
+
+`make check` requires Go 1.25 or newer for the terminal UI. Published installer
+releases contain prebuilt binaries and do not require Go on the target machine.
 
 [.shellcheckrc](../.shellcheckrc) disables `SC1091` for dynamic shared-helper and verifier paths.
 
@@ -79,16 +82,17 @@ Three GitHub Actions workflows in [.github/workflows/](../.github/workflows/):
 ## Adding a new script
 
 1. **Write the script** following the conventions documented in [README.md → Conventions](../README.md#conventions).
-2. **Add a manifest row** in [tests/manifest.sh](../tests/manifest.sh) with a verify command (one-liner) or `FILE`.
-3. **Optional:** if the verify is non-trivial, add `tests/verify/<category>_<name>.sh`.
-4. **Run locally:**
+2. **Add a catalog row** in [config/catalog.txt](../config/catalog.txt) with its category and user-facing label.
+3. **Add a manifest row** in [tests/manifest.sh](../tests/manifest.sh) with a verify command (one-liner) or `FILE`.
+4. **Optional:** if the verify is non-trivial, add `tests/verify/<category>_<name>.sh`.
+5. **Run locally:**
    ```bash
    bash tests/lint.sh
    bash tests/check-manifest-coverage.sh
    bash tests/run-in-docker.sh 24.04 smoke <category>/<name>.sh
    bash tests/run-in-docker.sh 24.04 idempotency <category>/<name>.sh
    ```
-5. **Open a PR** — CI rejects new scripts that lack a manifest entry.
+6. **Open a PR** — CI rejects new selectable scripts that lack catalog or manifest entries.
 
 ## Test fixtures
 

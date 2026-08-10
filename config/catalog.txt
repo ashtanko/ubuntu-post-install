@@ -1,0 +1,76 @@
+# category-id|category-label|item-label|repo-relative-script
+essentials|Essentials|Swap file|essentials/swap.sh
+essentials|Essentials|UFW firewall|essentials/firewall.sh
+essentials|Essentials|Unattended security updates|essentials/auto-updates.sh
+essentials|Essentials|Locale + timezone|essentials/locale-timezone.sh
+essentials|Essentials|GNOME quality-of-life settings|essentials/gnome-settings.sh
+essentials|Essentials|Journal log size cap|essentials/journald.sh
+essentials|Essentials|SSD/NVMe periodic TRIM|essentials/fstrim.sh
+essentials|Essentials|Disable motd-news ads|essentials/motd-news.sh
+essentials|Essentials|inotify + open-file limits|essentials/sysctl-limits.sh
+essentials|Essentials|System info dump|essentials/system-info.sh
+system|System|Base system (apt upgrade, build tools, git)|system/base.sh
+system|System|Hostname|system/hostname.sh
+system|System|User groups (docker, dialout, plugdev...)|system/user-groups.sh
+system|System|Time sync (NTP)|system/ntp.sh
+system|System|DNS resolvers (systemd-resolved)|system/hosts-dns.sh
+system|System|Sudo timestamp timeout (opt-in)|system/sudoers.sh
+system|System|Keyboard remapping (keyd macOS-style)|system/keyboard.sh
+system|System|GPG key + git signing|system/gpg.sh
+system|System|SSH key generation|system/ssh.sh
+apps|Apps|Google Chrome|apps/browsers.sh
+apps|Apps|Guake terminal|apps/guake.sh
+apps|Apps|Postman|apps/postman.sh
+apps|Apps|Warp terminal|apps/warp.sh
+apps|Apps|Visual Studio Code|apps/vscode.sh
+dev|Development|Java (OpenJDK 8/11/17/21/25)|dev/java.sh
+dev|Development|Docker Engine + Docker Desktop|dev/docker.sh
+dev|Development|Flutter SDK + Linux desktop|dev/flutter.sh
+dev|Development|Node.js (via NVM)|dev/node.sh
+dev|Development|Python 3 + pyenv + poetry|dev/python.sh
+dev|Development|Rust (via rustup)|dev/rust.sh
+dev|Development|Go SDK|dev/go.sh
+dev|Development|Databases (psql, redis, mysql, sqlite + pgcli/mycli)|dev/databases.sh
+dev|Development|Kubernetes (kubectl, helm, k9s, kind, kustomize)|dev/kubernetes.sh
+dev|Development|AWS CLI v2 + Session Manager plugin|dev/aws-cli.sh
+dev|Development|Terraform + tflint + tfsec|dev/terraform.sh
+tools|Terminal Tools|Zsh + Oh My Zsh|tools/zsh.sh
+tools|Terminal Tools|Fish shell + Fisher plugin manager|tools/fish.sh
+tools|Terminal Tools|Starship cross-shell prompt|tools/starship.sh
+tools|Terminal Tools|CLI tools (bat, fzf, rg, eza, jq, gh...)|tools/cli-tools.sh
+tools|Terminal Tools|Modern CLI extras (lazygit, delta, zoxide, btop...)|tools/modern-cli.sh
+tools|Terminal Tools|btop (resource monitor)|tools/btop.sh
+tools|Terminal Tools|Developer Nerd Fonts|tools/fonts.sh
+tools|Terminal Tools|Git config (aliases, defaults, signing)|tools/git-config.sh
+tools|Terminal Tools|pre-commit framework|tools/pre-commit-setup.sh
+tools|Terminal Tools|Backup home (manual; configure in .env)|tools/backup-home.sh
+tools|Terminal Tools|System maintenance (clean caches/logs)|tools/system-maintenance.sh
+ide|IDEs|Zed editor|ide/zed.sh
+ide|IDEs|VS Code extensions (from .env)|ide/vscode-extensions.sh
+ide|IDEs|JetBrains Toolbox|ide/jetbrains-toolbox.sh
+ide|IDEs|Neovim (latest)|ide/nvim.sh
+ai|AI Tools|Ollama (local LLMs)|ai/ollama.sh
+ai|AI Tools|Ollama models (from .env)|ai/ollama-models.sh
+ai|AI Tools|llama.cpp (build from source)|ai/llama-cpp.sh
+ai|AI Tools|Claude Code CLI|ai/claude.sh
+ai|AI Tools|OpenAI Codex CLI|ai/codex.sh
+ai|AI Tools|Gemini CLI|ai/gemini.sh
+ai|AI Tools|GitHub Copilot CLI|ai/github-copilot.sh
+ai|AI Tools|Hugging Face CLI|ai/huggingface-cli.sh
+ai|AI Tools|Aider|ai/aider.sh
+ai|AI Tools|goose CLI|ai/goose.sh
+ai|AI Tools|Qwen Code|ai/qwen-code.sh
+ai|AI Tools|Cursor Agent CLI|ai/cursor-agent.sh
+ai|AI Tools|Mistral Vibe CLI|ai/mistral-vibe.sh
+ai|AI Tools|Cline CLI|ai/cline.sh
+ai|AI Tools|Fabric prompt workflows|ai/fabric.sh
+ai|AI Tools|LLM CLI (multi-provider)|ai/llm-cli.sh
+ai|AI Tools|LiteLLM proxy CLI|ai/litellm.sh
+ai|AI Tools|MCP Inspector|ai/mcp-inspector.sh
+ai|AI Tools|Antigravity|ai/antigravity.sh
+ai|AI Tools|opencode|ai/opencode.sh
+ai|AI Tools|prompt-runner (universal LLM CLI)|ai/prompt-runner.sh
+software|Virtualization|VirtualBox|software/virtualbox.sh
+software|Virtualization|GNOME Boxes + virt-manager|software/boxes.sh
+software|Virtualization|VMware Workstation prereqs|software/vmware.sh
+vpn|VPN|NordVPN|vpn/nord.sh
