@@ -40,7 +40,7 @@ LD_URL="https://github.com/jesseduffield/lazydocker/releases/download/${LD_VERSI
 echo "📦 Downloading lazydocker $LD_VERSION..."
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
-wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP/lazydocker.tar.gz" "$LD_URL"
+wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP/lazydocker.tar.gz" "$LD_URL"
 
 echo "🔒 Verifying checksum..."
 LD_CHECKSUMS="$TMP/checksums.txt"

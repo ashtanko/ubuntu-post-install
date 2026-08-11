@@ -43,7 +43,7 @@ GL_BASE="https://github.com/gitleaks/gitleaks/releases/download/${GL_VERSION}"
 echo "📦 Downloading gitleaks $GL_VERSION..."
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
-wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP/gitleaks.tar.gz" "${GL_BASE}/${GL_ASSET}"
+wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP/gitleaks.tar.gz" "${GL_BASE}/${GL_ASSET}"
 
 echo "🔒 Verifying checksum..."
 GL_CHECKSUMS="$TMP/checksums.txt"

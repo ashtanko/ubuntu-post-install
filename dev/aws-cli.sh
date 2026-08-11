@@ -32,7 +32,7 @@ else
     TMP=$(mktemp -d)
     trap 'rm -rf "$TMP"' EXIT
     AWS_ZIP_URL="https://awscli.amazonaws.com/awscli-exe-linux-${AWS_ARCH}.zip"
-    wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP/awscliv2.zip" "$AWS_ZIP_URL"
+    wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP/awscliv2.zip" "$AWS_ZIP_URL"
     unzip -q "$TMP/awscliv2.zip" -d "$TMP"
     sudo "$TMP/aws/install" --update
     echo "✅ aws installed ($(aws --version 2>&1))"
@@ -47,7 +47,7 @@ else
     # shellcheck disable=SC2064
     trap "rm -f '$DEB'" EXIT
     SSM_URL="https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_${SSM_ARCH}/session-manager-plugin.deb"
-    wget --tries=3 --waitretry=2 -q --show-progress -O "$DEB" "$SSM_URL"
+    wget --tries=3 --waitretry=2 -nv --show-progress -O "$DEB" "$SSM_URL"
     sudo apt-get install -y "$DEB"
     echo "✅ session-manager-plugin installed"
 fi

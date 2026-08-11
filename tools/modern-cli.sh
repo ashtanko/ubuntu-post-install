@@ -58,7 +58,7 @@ else
     DELTA_URL="https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta-musl_${DELTA_VERSION}_${ARCH}.deb"
     DEB=$(mktemp --suffix=.deb)
     trap 'rm -f "$DEB"' EXIT
-    wget --tries=3 --waitretry=2 -q --show-progress -O "$DEB" "$DELTA_URL"
+    wget --tries=3 --waitretry=2 -nv --show-progress -O "$DEB" "$DELTA_URL"
     sudo apt-get install -y "$DEB"
     echo "✅ delta installed"
 fi
@@ -82,7 +82,7 @@ else
     echo "📦 Downloading lazygit $LG_VERSION..."
     TMP=$(mktemp -d)
     trap 'rm -rf "$TMP"' EXIT
-    wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP/lazygit.tar.gz" "$LG_URL"
+    wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP/lazygit.tar.gz" "$LG_URL"
 
     echo "🔒 Verifying checksum..."
     LG_CHECKSUMS="$TMP/checksums.txt"
@@ -115,7 +115,7 @@ else
     # github.com); retry protects against a dropped connection, not tampering.
     ZOXIDE_DEB=$(mktemp --suffix=.deb)
     trap 'rm -f "$ZOXIDE_DEB"' EXIT
-    wget --tries=3 --waitretry=2 -q --show-progress -O "$ZOXIDE_DEB" "$ZOXIDE_URL"
+    wget --tries=3 --waitretry=2 -nv --show-progress -O "$ZOXIDE_DEB" "$ZOXIDE_URL"
     sudo apt-get install -y "$ZOXIDE_DEB"
     rm -f "$ZOXIDE_DEB"
     echo "✅ zoxide installed"
@@ -134,7 +134,7 @@ else
     TMP_D=$(mktemp -d)
     # shellcheck disable=SC2064
     trap "rm -rf '$TMP_D'" EXIT
-    wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP_D/dust.tar.gz" "$DUST_URL"
+    wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP_D/dust.tar.gz" "$DUST_URL"
     tar -xzf "$TMP_D/dust.tar.gz" -C "$TMP_D" --strip-components=1
     sudo install -m 0755 "$TMP_D/dust" "$BIN_DIR/dust"
     echo "✅ dust installed → $BIN_DIR/dust"
@@ -153,7 +153,7 @@ else
     TLDR_CHECKSUMS="${TMP_T}.sha256"
     # shellcheck disable=SC2064
     trap "rm -f '$TMP_T' '$TLDR_CHECKSUMS'" EXIT
-    wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP_T" "$TLDR_URL"
+    wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP_T" "$TLDR_URL"
 
     echo "🔒 Verifying checksum..."
     curl -fsSL --retry 3 --retry-all-errors -o "$TLDR_CHECKSUMS" "${TLDR_URL}.sha256"

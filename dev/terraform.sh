@@ -98,7 +98,7 @@ else
     echo "📦 Downloading tflint $TFLINT_VERSION..."
     TMP_TFLINT=$(mktemp -d)
     trap 'rm -rf "$TMP_TFLINT"' EXIT
-    wget --tries=3 --waitretry=2 -q --show-progress \
+    wget --tries=3 --waitretry=2 -nv --show-progress \
         -O "$TMP_TFLINT/$TFLINT_ASSET" "${TFLINT_BASE}/${TFLINT_ASSET}"
 
     echo "🔒 Verifying checksum..."
@@ -132,7 +132,7 @@ else
     TMP=$(mktemp)
     # shellcheck disable=SC2064
     trap "rm -f '$TMP'" EXIT
-    wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP" "$TFSEC_URL"
+    wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP" "$TFSEC_URL"
     sudo install -m 0755 "$TMP" "$BIN_DIR/tfsec"
     echo "✅ tfsec installed → $BIN_DIR/tfsec"
 fi

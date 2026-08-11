@@ -42,7 +42,7 @@ YQ_BASE="https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}"
 echo "📦 Downloading yq $YQ_VERSION..."
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
-wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP/$YQ_ASSET" "${YQ_BASE}/${YQ_ASSET}"
+wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP/$YQ_ASSET" "${YQ_BASE}/${YQ_ASSET}"
 
 # yq's `checksums` file is a matrix: column 1 is the filename, and the
 # remaining columns are digests whose algorithm order is listed one-per-line

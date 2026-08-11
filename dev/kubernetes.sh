@@ -91,7 +91,7 @@ else
     echo "📦 Downloading k9s $K9S_VERSION..."
     TMP=$(mktemp -d)
     trap 'rm -rf "$TMP"' EXIT
-    wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP/k9s.tar.gz" "$K9S_URL"
+    wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP/k9s.tar.gz" "$K9S_URL"
 
     echo "🔒 Verifying checksum..."
     K9S_CHECKSUMS="$TMP/checksums.sha256"
@@ -120,7 +120,7 @@ else
     KIND_CHECKSUMS="${TMP_KIND}.sha256sum"
     # shellcheck disable=SC2064
     trap "rm -f '$TMP_KIND' '$KIND_CHECKSUMS'" EXIT
-    wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP_KIND" "$KIND_URL"
+    wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP_KIND" "$KIND_URL"
 
     echo "🔒 Verifying checksum..."
     curl -fsSL --retry 3 --retry-all-errors -o "$KIND_CHECKSUMS" "${KIND_URL}.sha256sum"

@@ -28,7 +28,7 @@ else
     DEB=$(mktemp --suffix=.deb)
     trap 'rm -f "$DEB"' EXIT
 
-    wget --tries=3 --waitretry=2 -q --show-progress -O "$DEB" \
+    wget --tries=3 --waitretry=2 -nv --show-progress -O "$DEB" \
         "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
 
     sudo apt update

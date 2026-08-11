@@ -51,7 +51,7 @@ echo "📥 $DOWNLOAD_URL"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP/toolbox.tar.gz" "$DOWNLOAD_URL"
+wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP/toolbox.tar.gz" "$DOWNLOAD_URL"
 
 mkdir -p "$INSTALL_DIR"
 tar -xzf "$TMP/toolbox.tar.gz" -C "$INSTALL_DIR" --strip-components=1

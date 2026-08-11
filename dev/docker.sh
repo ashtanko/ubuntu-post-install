@@ -68,7 +68,7 @@ else
     DEB=$(mktemp --suffix=.deb)
     trap 'rm -f "$DEB"' EXIT
 
-    wget --tries=3 --waitretry=2 -q --show-progress \
+    wget --tries=3 --waitretry=2 -nv --show-progress \
         -O "$DEB" \
         "https://desktop.docker.com/linux/main/${ARCH}/docker-desktop-${ARCH}.deb"
 

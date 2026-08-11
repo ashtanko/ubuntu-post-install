@@ -82,7 +82,7 @@ cleanup() {
     fi
 }
 trap cleanup EXIT
-wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP/nvim.tar.gz" "$URL"
+wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP/nvim.tar.gz" "$URL"
 
 # A custom mirror is untrusted, so it must always declare its digest.
 EXPECTED_SHA="${NVIM_ARCHIVE_SHA256:-}"

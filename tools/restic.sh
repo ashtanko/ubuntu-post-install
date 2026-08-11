@@ -48,7 +48,7 @@ RESTIC_BASE="https://github.com/restic/restic/releases/download/${RESTIC_VERSION
 echo "📦 Downloading restic $RESTIC_VERSION..."
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
-wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP/$RESTIC_ASSET" "${RESTIC_BASE}/${RESTIC_ASSET}"
+wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP/$RESTIC_ASSET" "${RESTIC_BASE}/${RESTIC_ASSET}"
 
 echo "🔒 Verifying checksum..."
 RESTIC_CHECKSUMS="$TMP/SHA256SUMS"

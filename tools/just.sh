@@ -40,7 +40,7 @@ JUST_BASE="https://github.com/casey/just/releases/download/${JUST_VERSION}"
 echo "📦 Downloading just $JUST_VERSION..."
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
-wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP/just.tar.gz" "${JUST_BASE}/${JUST_ASSET}"
+wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP/just.tar.gz" "${JUST_BASE}/${JUST_ASSET}"
 
 echo "🔒 Verifying checksum..."
 JUST_CHECKSUMS="$TMP/SHA256SUMS"

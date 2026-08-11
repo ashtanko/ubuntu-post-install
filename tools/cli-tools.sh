@@ -81,7 +81,7 @@ else
     trap 'rm -rf "$TMP"' EXIT
     # eza publishes no checksum asset to verify against (fetched over TLS from
     # github.com); retry protects against a dropped connection, not tampering.
-    wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP/eza.tar.gz" "$EZA_URL"
+    wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP/eza.tar.gz" "$EZA_URL"
     tar -xzf "$TMP/eza.tar.gz" -C "$TMP"
     EZA_BIN=$(find "$TMP" -name eza -type f | head -1)
     [ -n "$EZA_BIN" ] || { echo "❌ eza binary not found in tarball"; exit 1; }
