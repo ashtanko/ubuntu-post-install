@@ -75,7 +75,7 @@ For a source checkout, `.env` is gitignored and is a convenient repo-local confi
 | `TAILSCALE_AUTHKEY` | [vpn/tailscale.sh](../vpn/tailscale.sh) | — | Non-interactive `tailscale up`; empty = manual browser login |
 | `LLAMA_CPP_DIR` | [ai/llama-cpp.sh](../ai/llama-cpp.sh), [updates/update-llama-cpp.sh](../updates/update-llama-cpp.sh) | `$HOME/.local/src/llama.cpp` | Where llama.cpp is cloned and built; the updater requires a clean checkout and existing CMake build |
 | `OLLAMA_MODELS` | [ai/ollama-models.sh](../ai/ollama-models.sh) | — | Required whitespace-separated model references; downloads only when the script is explicitly run |
-| `CLAUDE_CHANNEL` | [ai/claude.sh](../ai/claude.sh) | `stable` | Anthropic APT channel: `stable` or `latest` |
+| `CLAUDE_CHANNEL` | [ai/claude.sh](../ai/claude.sh), [updates/update-claude.sh](../updates/update-claude.sh) | `stable` | Anthropic APT channel, and the npm dist-tag the updater installs: `stable` or `latest` |
 | `CODEX_RELEASE` | [ai/codex.sh](../ai/codex.sh), [updates/update-codex.sh](../updates/update-codex.sh) | `latest` | Pins the installer; the updater runs native `codex update` only when this remains `latest` |
 | `COPILOT_VERSION` | [ai/github-copilot.sh](../ai/github-copilot.sh), [updates/update-github-copilot.sh](../updates/update-github-copilot.sh) | `latest` | Pins the installer; the updater skips pinned installations |
 | `CLINE_VERSION` | [ai/cline.sh](../ai/cline.sh), [updates/update-cline.sh](../updates/update-cline.sh) | `latest` | Pins the installer; the updater skips pinned installations |

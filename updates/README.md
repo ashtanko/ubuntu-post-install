@@ -24,7 +24,7 @@ bash updates/update-all.sh
 | `update-aws-cli.sh` | Verifies AWS's detached signature, then runs the v2 installer with `--update` |
 | `update-bun.sh` | `bun upgrade` |
 | `update-chezmoi.sh` | `chezmoi upgrade` |
-| `update-claude.sh` | Upgrades only the `claude-code` APT package |
+| `update-claude.sh` | Upgrades only the `claude-code` APT package, or the global `@anthropic-ai/claude-code` npm package when that owns `claude` |
 | `update-cline.sh` | `cline update` for the active global npm installation |
 | `update-codex.sh` | `codex update` for the standalone CLI installed by this project |
 | `update-composer.sh` | `composer self-update --no-interaction` |

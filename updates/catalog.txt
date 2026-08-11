@@ -7,7 +7,7 @@ update-atuin.sh|tools/atuin.sh|atuin update
 update-aws-cli.sh|dev/aws-cli.sh|signature-verified AWS CLI v2 installer --update
 update-bun.sh|dev/bun.sh|bun upgrade
 update-chezmoi.sh|tools/dotfiles.sh|chezmoi upgrade
-update-claude.sh|ai/claude.sh|targeted APT package upgrade
+update-claude.sh|ai/claude.sh|targeted APT package or npm global upgrade, whichever owns the executable
 update-cline.sh|ai/cline.sh|cline update
 update-codex.sh|ai/codex.sh|codex update
 update-composer.sh|dev/php.sh|composer self-update

@@ -169,7 +169,7 @@ Maintenance wrappers for tools already installed by this project. They are not p
 | [update-aws-cli.sh](../updates/update-aws-cli.sh) | Verify AWS's detached signature, then update the repository-managed AWS CLI v2 installation |
 | [update-bun.sh](../updates/update-bun.sh) | Upgrade the Bun binary installed under `$BUN_INSTALL` |
 | [update-chezmoi.sh](../updates/update-chezmoi.sh) | Update the repository-managed chezmoi binary |
-| [update-claude.sh](../updates/update-claude.sh) | Upgrade the Claude Code package from Anthropic's configured APT channel |
+| [update-claude.sh](../updates/update-claude.sh) | Upgrade Claude Code from Anthropic's configured APT channel, or from npm when the active executable is npm-owned |
 | [update-cline.sh](../updates/update-cline.sh) | Update the active global npm installation of Cline CLI |
 | [update-codex.sh](../updates/update-codex.sh) | Run native `codex update` for the standalone CLI installed by this project |
 | [update-composer.sh](../updates/update-composer.sh) | Self-update the standalone Composer PHAR installed by this project |

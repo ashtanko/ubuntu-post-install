@@ -269,7 +269,7 @@ Copy `.env.example` to `.env` and fill in your values. `.env` is gitignored. Eve
 | `SUDO_TIMESTAMP_TIMEOUT_MINUTES` | system/sudoers.sh | — unset = skip (opt-in only) |
 | `LLAMA_CPP_DIR` | ai/llama-cpp.sh | `$HOME/.local/src/llama.cpp` |
 | `OLLAMA_MODELS` | ai/ollama-models.sh | — required, whitespace-separated |
-| `CLAUDE_CHANNEL` | ai/claude.sh | `stable` |
+| `CLAUDE_CHANNEL` | ai/claude.sh, updates/update-claude.sh | `stable` |
 | `CODEX_RELEASE` | ai/codex.sh | `latest` |
 | `COPILOT_VERSION` | ai/github-copilot.sh | `latest` |
 | `CLINE_VERSION` | ai/cline.sh | `latest` |

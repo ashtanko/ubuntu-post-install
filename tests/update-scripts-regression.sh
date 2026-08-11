@@ -795,6 +795,80 @@ chmod +x "$claude_case/bin/dpkg-query" "$claude_case/bin/sudo"
 assert_log_line 'sudo apt-get update' "$claude_case/invocations.log"
 assert_log_line 'sudo apt-get install -y --only-upgrade claude-code' "$claude_case/invocations.log"
 
+# Claude Code also ships as a global npm package. With no APT package owning
+# the executable, the updater must fall through to npm provenance and select
+# the release matching the configured channel rather than skipping outright.
+claude_npm_case="$TMP/mock-claude-npm"
+claude_npm_prefix="$claude_npm_case/home/.npm-global"
+claude_npm_root="$claude_npm_prefix/lib/node_modules"
+mkdir -p "$claude_npm_prefix/bin" "$claude_npm_root/@anthropic-ai/claude-code" \
+    "$claude_npm_case/bin"
+for command_name in dirname readlink grep; do
+    ln -s "$(command -v "$command_name")" "$claude_npm_case/bin/$command_name"
+done
+make_logging_tool claude "$claude_npm_prefix/bin"
+cat >"$claude_npm_case/bin/npm" <<NPM_STUB
+#!/bin/bash
+printf 'npm %s\n' "\$*" >>"\$UPDATE_TEST_LOG"
+case "\$*" in
+    'config get prefix') printf '%s\n' '$claude_npm_prefix' ;;
+    'root -g') printf '%s\n' '$claude_npm_root' ;;
+esac
+NPM_STUB
+chmod +x "$claude_npm_case/bin/npm"
+
+: >"$claude_npm_case/invocations.log"
+/usr/bin/env -i HOME="$claude_npm_case/home" \
+    PATH="$claude_npm_prefix/bin:$claude_npm_case/bin" \
+    UPDATE_TEST_LOG="$claude_npm_case/invocations.log" \
+    /bin/bash "$UPDATES_DIR/update-claude.sh" >"$claude_npm_case/output.log" 2>&1 \
+    || fail "updates/update-claude.sh failed against the owned npm fixture"
+assert_log_line 'npm install -g @anthropic-ai/claude-code@stable' \
+    "$claude_npm_case/invocations.log"
+if grep -Fq 'apt-get' "$claude_npm_case/invocations.log"; then
+    fail "update-claude reached the APT path for an npm-owned installation"
+fi
+
+# The channel knob that picks ai/claude.sh's APT repo picks the npm dist-tag.
+: >"$claude_npm_case/invocations.log"
+/usr/bin/env -i HOME="$claude_npm_case/home" \
+    PATH="$claude_npm_prefix/bin:$claude_npm_case/bin" \
+    UPDATE_TEST_LOG="$claude_npm_case/invocations.log" CLAUDE_CHANNEL=latest \
+    /bin/bash "$UPDATES_DIR/update-claude.sh" >"$claude_npm_case/latest.log" 2>&1 \
+    || fail "updates/update-claude.sh failed for the latest npm channel"
+assert_log_line 'npm install -g @anthropic-ai/claude-code@latest' \
+    "$claude_npm_case/invocations.log"
+
+# An npm prefix that owns no claude package must not be upgraded into one.
+claude_foreign_case="$TMP/mock-claude-foreign"
+claude_foreign_prefix="$claude_foreign_case/home/.npm-global"
+claude_foreign_root="$claude_foreign_prefix/lib/node_modules"
+mkdir -p "$claude_foreign_prefix/bin" "$claude_foreign_root" "$claude_foreign_case/bin"
+for command_name in dirname readlink grep; do
+    ln -s "$(command -v "$command_name")" "$claude_foreign_case/bin/$command_name"
+done
+make_logging_tool claude "$claude_foreign_case/bin"
+cat >"$claude_foreign_case/bin/npm" <<NPM_STUB
+#!/bin/bash
+printf 'npm %s\n' "\$*" >>"\$UPDATE_TEST_LOG"
+case "\$*" in
+    'config get prefix') printf '%s\n' '$claude_foreign_prefix' ;;
+    'root -g') printf '%s\n' '$claude_foreign_root' ;;
+esac
+NPM_STUB
+chmod +x "$claude_foreign_case/bin/npm"
+: >"$claude_foreign_case/invocations.log"
+/usr/bin/env -i HOME="$claude_foreign_case/home" \
+    PATH="$claude_foreign_case/bin" \
+    UPDATE_TEST_LOG="$claude_foreign_case/invocations.log" \
+    /bin/bash "$UPDATES_DIR/update-claude.sh" >"$claude_foreign_case/output.log" 2>&1 \
+    || fail "updates/update-claude.sh did not skip an unowned Claude installation"
+if grep -Fq 'npm install' "$claude_foreign_case/invocations.log"; then
+    fail "update-claude installed over a Claude executable it does not own"
+fi
+grep -Eqi 'skip' "$claude_foreign_case/output.log" \
+    || fail "update-claude did not explain why it skipped an unowned installation"
+
 # Antigravity comes from Google's Artifact Registry APT repository. Its updater
 # must target only that package and must read versions from the package
 # database instead of launching the GUI binary. Ownership is proven by package
