@@ -17,7 +17,7 @@ source "$GITHUB_HELPER" || { echo "❌ Missing github helper: $GITHUB_HELPER" >&
 
 echo "🚀 Installing just (command runner)..."
 
-if command -v just &>/dev/null; then
+if command -v just &>/dev/null && [ "${UPI_JUST_UPDATE:-0}" != "1" ]; then
     echo "✅ just already installed ($(just --version 2>/dev/null | head -1))"
     exit 0
 fi
@@ -39,7 +39,12 @@ JUST_BASE="https://github.com/casey/just/releases/download/${JUST_VERSION}"
 
 echo "📦 Downloading just $JUST_VERSION..."
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
+STAGE=""
+cleanup() {
+    rm -rf "$TMP"
+    [ -z "$STAGE" ] || sudo rm -f "$STAGE"
+}
+trap cleanup EXIT
 wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP/just.tar.gz" "${JUST_BASE}/${JUST_ASSET}"
 
 echo "🔒 Verifying checksum..."
@@ -53,14 +58,20 @@ echo "✅ Checksum verified"
 
 tar -xzf "$TMP/just.tar.gz" -C "$TMP"
 [ -f "$TMP/just" ] || { echo "❌ just binary not found in tarball"; exit 1; }
-sudo install -m 0755 "$TMP/just" "$BIN_DIR/just"
+STAGE=$(sudo mktemp "$BIN_DIR/.just-stage.XXXXXX")
+sudo install -m 0755 "$TMP/just" "$STAGE"
+STAGE_VERSION=$("$STAGE" --version 2>/dev/null | head -1) \
+    || { echo "❌ staged just binary failed its version check"; exit 1; }
+[ -n "$STAGE_VERSION" ] || { echo "❌ staged just binary returned no version"; exit 1; }
+sudo mv -f "$STAGE" "$BIN_DIR/just"
+STAGE=""
 
-if ! command -v just &>/dev/null; then
+if [ ! -x "$BIN_DIR/just" ]; then
     echo "❌ just installation failed or is not in PATH"
     exit 1
 fi
 
 echo ""
-echo "✅ just installed ($(just --version 2>/dev/null | head -1)) → $BIN_DIR/just"
+echo "✅ just installed ($STAGE_VERSION) → $BIN_DIR/just"
 echo "💡 Create a justfile, then run recipes by name: just build"
 echo "💡 List available recipes: just --list"

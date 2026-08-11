@@ -14,7 +14,7 @@ report() {
     ((++failures))
 }
 
-mapfile -t scripts < <(find ai apps dev essentials ide mobile software system tools vpn \
+mapfile -t scripts < <(find ai apps dev essentials ide mobile software system tools updates vpn \
     -maxdepth 1 -type f -name '*.sh' | sort)
 scripts+=(setup.sh install.sh)
 

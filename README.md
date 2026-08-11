@@ -91,6 +91,18 @@ bash ai/ollama.sh
 
 If you accidentally use `sh script.sh`, the script re-execs itself under `bash` so dash-isms (`[[ ]]`, `&>`, `$'…'`) keep working.
 
+## Updating installed tools
+
+Tools with an upstream-supported updater have matching wrappers under [`updates/`](updates/). Run one updater directly, or run the aggregate script to update every supported tool that is currently installed:
+
+```bash
+bash updates/update-claude.sh
+bash updates/update-codex.sh
+bash updates/update-all.sh
+```
+
+Each individual updater exits successfully with a skip message when its tool is absent. Package-manager-owned software continues to use the normal `apt`, Snap, or application auto-update path. [`updates/skipped.txt`](updates/skipped.txt) records why every selectable installer without a wrapper is intentionally omitted.
+
 ## What's installed
 
 Browse [docs/SCRIPTS.md](docs/SCRIPTS.md) for the complete inventory. Categories at a glance:
@@ -100,10 +112,11 @@ Browse [docs/SCRIPTS.md](docs/SCRIPTS.md) for the complete inventory. Categories
 | [essentials/](essentials/) | OS bootstrap: swap, UFW firewall, fail2ban, Lynis audit, auto-updates, locale/TZ, GNOME tweaks, journal size cap, fstrim, motd-news, inotify/nofile limits, system info |
 | [system/](system/) | Foundations: apt upgrade + build tools, hostname, user groups, NTP, DNS, sudo timeout, keyboard remap (keyd), GPG key, SSH key |
 | [apps/](apps/) | GUI apps + CLIs: Chrome, Guake, Warp, VS Code, Postman, Bitwarden CLI, Flameshot |
-| [dev/](dev/) | Runtimes + cloud: Java, Docker, Podman, Flutter, Node (NVM), Deno, Bun, Python (pyenv), Rust, Go, .NET, Ruby (rbenv), PHP, C/C++, AWS/GCP/Azure CLIs, Kubernetes, Terraform, databases |
-| [tools/](tools/) | Shell + CLI: Zsh/Oh My Zsh, Fish/Fisher, Starship, bat/fzf/rg/eza/jq/yq, tmux config, Nerd Fonts, git config, pre-commit, gitleaks, backup + restic, maintenance, Wireshark, network tools, chezmoi, rclone, lazydocker, just, Atuin |
+| [dev/](dev/) | Runtimes + cloud: Java, Docker (rootful + rootless), Podman, Flutter, Node (NVM), Deno, Bun, Python (pyenv), Rust, Go, .NET, Ruby (rbenv), PHP, C/C++, AWS/GCP/Azure CLIs, Kubernetes, Terraform, databases |
+| [tools/](tools/) | Shell + CLI: Zsh/Oh My Zsh, Fish/Fisher, Starship, bat/fzf/rg/eza/jq/yq, tmux config, Nerd Fonts, git config, pre-commit, gitleaks, backup + restic, maintenance, Wireshark, network tools, chezmoi, rclone, container tooling (lazydocker, ctop, dive, hadolint, Trivy), just, Atuin |
 | [ide/](ide/) | Editors + IDEs: Zed, Neovim, JetBrains Toolbox, VS Code extensions, Android Studio, Cursor, DBeaver |
 | [ai/](ai/) | LLM tooling: local inference, coding agents, provider-neutral CLIs, LiteLLM gateway, Fabric workflows, and MCP Inspector |
+| [updates/](updates/) | Maintenance wrappers plus an audited skip ledger for installed tools; not part of the fresh-install menu |
 | [software/](software/) | Virtualization: VirtualBox, GNOME Boxes/virt-manager, VMware prereqs |
 | [vpn/](vpn/) | VPN clients: NordVPN, Tailscale |
 | [mobile/](mobile/) | Manual mobile-dev utilities (not wired into setup.sh) |
@@ -193,10 +206,11 @@ The mechanical parts of these conventions are enforced by [tests/script-contract
 See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for the full guide. TL;DR:
 
 1. Follow the script conventions above.
-2. Add the user-facing label and category to [config/catalog.txt](config/catalog.txt).
-3. Add a row to [tests/manifest.sh](tests/manifest.sh) for compatibility, env vars, and verification commands.
-4. Optional: add a multi-line verification under `tests/verify/<category>_<name>.sh`.
-5. Run `make check` before opening a PR.
+2. For a selectable installer, add the user-facing label and category to [config/catalog.txt](config/catalog.txt). Maintenance utilities such as `updates/*.sh` stay out of the fresh-install catalog.
+3. Map that installer in [updates/catalog.txt](updates/catalog.txt), or record its audited omission reason in [updates/skipped.txt](updates/skipped.txt).
+4. Add a row to [tests/manifest.sh](tests/manifest.sh) for compatibility, env vars, and verification commands.
+5. Optional: add a multi-line verification under `tests/verify/<category>_<name>.sh`.
+6. Run `make check` before opening a PR.
 
 CI will reject PRs that add scripts without manifest entries.
 

@@ -12,6 +12,7 @@ bash tests/runtime-core-regression.sh
 bash tests/installer-regression.sh
 bash tests/release-metadata-regression.sh
 bash tests/idempotency-regression.sh
+bash tests/update-scripts-regression.sh
 
 for docker_args in \
     '25.04 smoke' \
@@ -29,12 +30,12 @@ for docker_args in \
 done
 
 if grep -REn --include='*.sh' 'set -a;[[:space:]]*(source|\.)[[:space:]].*\.env|set -a;[[:space:]]*source' \
-    setup.sh ai apps dev essentials ide software system tools vpn; then
+    setup.sh ai apps dev essentials ide software system tools updates vpn; then
     echo "❌ legacy config loader still exports configuration to child processes"
     exit 1
 fi
 
-mapfile -t configured_scripts < <(find ai apps dev essentials ide software system tools vpn \
+mapfile -t configured_scripts < <(find ai apps dev essentials ide software system tools updates vpn \
     -maxdepth 1 -type f -name '*.sh' | sort)
 for configured_script in "${configured_scripts[@]}"; do
     # The repository-root token is intentionally matched literally.

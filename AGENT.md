@@ -5,7 +5,7 @@ This repository contains automated, idempotent Bash scripts to provision a fresh
 ## Project Overview
 
 - **Purpose:** Automate the setup of Ubuntu development environments.
-- **Architecture:** Modular scripts organized by category (essentials, system, apps, dev, tools, ide, ai, software).
+- **Architecture:** Modular scripts organized by category (essentials, system, apps, dev, tools, ide, ai, software), plus maintenance wrappers under `updates/`.
 - **Core Technologies:** Bash (4.0+), Ubuntu (22.04+), Docker (for testing).
 - **Configuration:** Environment variables defined in a `.env` file (copied from `.env.example`).
 - **Idempotency:** Scripts detect existing installations and skip already-completed steps using marker files in `~/.cache/ubuntu-setup/`.
@@ -16,6 +16,7 @@ This repository contains automated, idempotent Bash scripts to provision a fresh
 ### Main Entry Point
 - **Interactive Setup:** `bash setup.sh` - Walk through categories and select components to install.
 - **Individual Scripts:** Run any script directly, e.g., `bash dev/node.sh`.
+- **Supported Updates:** Run one updater such as `bash updates/update-claude.sh`, or `bash updates/update-all.sh` for every installed tool with a documented updater.
 
 ### Configuration
 - **Initial Setup:** `cp .env.example .env` and edit the variables as needed.

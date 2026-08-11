@@ -102,17 +102,18 @@ Three GitHub Actions workflows in [.github/workflows/](../.github/workflows/):
 ## Adding a new script
 
 1. **Write the script** following the conventions documented in [README.md → Conventions](../README.md#conventions).
-2. **Add a catalog row** in [config/catalog.txt](../config/catalog.txt) with its category and user-facing label.
-3. **Add a manifest row** in [tests/manifest.sh](../tests/manifest.sh) with a verify command (one-liner) or `FILE`.
-4. **Optional:** if the verify is non-trivial, add `tests/verify/<category>_<name>.sh`.
-5. **Run locally:**
+2. **For a selectable installer, add a catalog row** in [config/catalog.txt](../config/catalog.txt) with its category and user-facing label. Maintenance utilities that should not run during a fresh install stay out of the catalog.
+3. **Record update coverage:** map the installer from an updater row in [updates/catalog.txt](../updates/catalog.txt), or add its audited omission reason to [updates/skipped.txt](../updates/skipped.txt).
+4. **Add a manifest row** in [tests/manifest.sh](../tests/manifest.sh) with a verify command (one-liner) or `FILE`.
+5. **Optional:** if the verify is non-trivial, add `tests/verify/<category>_<name>.sh`.
+6. **Run locally:**
    ```bash
    bash tests/lint.sh
    bash tests/check-manifest-coverage.sh
    bash tests/run-in-docker.sh 24.04 smoke <category>/<name>.sh
    bash tests/run-in-docker.sh 24.04 idempotency <category>/<name>.sh
    ```
-6. **Open a PR** — CI rejects new selectable scripts that lack catalog or manifest entries.
+7. **Open a PR** — CI rejects new selectable scripts that lack catalog, updater/skip coverage, or manifest entries.
 
 ## Test fixtures
 

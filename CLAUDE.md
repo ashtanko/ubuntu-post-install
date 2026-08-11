@@ -26,10 +26,11 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `essentials/` | Core OS bootstrap: swap, firewall, fail2ban, Lynis audit, auto-updates, locale/TZ, GNOME tweaks, system info |
 | `system/` | OS foundations: apt upgrade, keyboard remapping, GPG key, SSH key |
 | `apps/` | GUI applications + CLIs: Chrome, Guake, Warp, VS Code, Postman, Bitwarden CLI, Flameshot |
-| `dev/` | Development runtimes + cloud CLIs: Java, Docker, Podman, Flutter, Node, Deno, Bun, Python, Rust, Go, .NET, Ruby, PHP, C/C++, AWS/GCP/Azure |
-| `tools/` | Shell, CLI, and dev helpers: Zsh, CLI tools, tmux config, fonts, git config, pre-commit, gitleaks, backup + restic, maintenance, Wireshark, network tools, chezmoi, rclone, lazydocker, yq, just, Atuin |
+| `dev/` | Development runtimes + cloud CLIs: Java, Docker (rootful + rootless), Podman, Flutter, Node, Deno, Bun, Python, Rust, Go, .NET, Ruby, PHP, C/C++, AWS/GCP/Azure |
+| `tools/` | Shell, CLI, and dev helpers: Zsh, CLI tools, tmux config, fonts, git config, pre-commit, gitleaks, backup + restic, maintenance, Wireshark, network tools, chezmoi, rclone, container tooling (lazydocker, ctop, dive, hadolint, Trivy), yq, just, Atuin |
 | `ide/` | Editors: Zed, Neovim, JetBrains Toolbox, VS Code extensions bulk install |
 | `ai/` | LLM tooling: Ollama, llama.cpp, Claude Code, Codex, Gemini, Copilot, Hugging Face, Aider, opencode, prompt-runner |
+| `updates/` | Maintenance wrappers for installed tools with documented scriptable updater paths; not part of the fresh-install menu |
 | `software/` | Virtualization: VirtualBox, GNOME Boxes/virt-manager, VMware prereqs |
 | `vpn/` | VPN clients: NordVPN |
 | `mobile/` | Mobile dev utilities (manual; not wired into setup.sh) |
@@ -82,6 +83,7 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 |---|---|
 | `java.sh` | OpenJDK 8/11/17/21/25 — interactive menu or `JAVA_VERSION` env; installs side-by-side, switch default via `update-alternatives` |
 | `docker.sh` | Docker Engine + Docker Desktop + user group |
+| `docker-rootless.sh` | Rootless Docker daemon for the current user (`dockerd-rootless-setuptool.sh`); reports missing subuid/subgid rather than rewriting them |
 | `flutter.sh` | Flutter SDK (stable), Android deps, Linux desktop deps |
 | `node.sh` | Node.js via NVM — installs latest LTS |
 | `python.sh` | Python 3 + pyenv + pipx + poetry |
@@ -119,6 +121,11 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `dotfiles.sh` | chezmoi dotfiles manager; optionally clones `$DOTFILES_REPO` (never auto-applies) |
 | `rclone.sh` | rclone cloud storage sync — pairs with `backup-home.sh` for offsite copies |
 | `lazydocker.sh` | lazydocker terminal UI for Docker (GitHub release, checksum-verified) |
+| `ctop.sh` | ctop — live per-container CPU/memory/net/IO metrics (GitHub release, checksum-verified) |
+| `dive.sh` | dive — explore a Docker image layer by layer (GitHub release `.deb`, checksum-verified) |
+| `hadolint.sh` | hadolint Dockerfile linter (GitHub release; upstream publishes no digest, so the download is ELF-checked) |
+| `trivy.sh` | Trivy image/filesystem/IaC vulnerability scanner via its official signed apt repo (release-independent `generic` suite) |
+| `docker-maintenance.sh` | Docker-only disk reclaim: containers, networks, images, build cache; volumes opt-in |
 | `tmux-config.sh` | TPM plugin manager + starter `~/.tmux.conf` (written only if absent); prefix rebound to `Ctrl-a` |
 | `restic.sh` | restic — deduplicated, encrypted, incremental backups; speaks rclone remotes natively |
 | `network-tools.sh` | mtr, nmap, dig, ss, lsof, nc, iperf3, HTTPie, whois |
@@ -159,7 +166,7 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `llm-cli.sh` | Provider-neutral LLM CLI via pipx |
 | `litellm.sh` | OpenAI-compatible LiteLLM proxy CLI via pipx |
 | `mcp-inspector.sh` | MCP server debugger via npm |
-| `antigravity.sh` | Antigravity auto-updater via Google APT repo |
+| `antigravity.sh` | Google Antigravity IDE via Google's signed APT repo (key fingerprint pinned); self-updates through apt |
 | `opencode.sh` | opencode CLI via official installer |
 | `prompt-runner.sh` | Installs `prompt` command — runs text/.prompt files against ollama / openai / anthropic |
 
@@ -236,6 +243,10 @@ Copy `.env.example` to `.env` and fill in your values. `.env` is gitignored. Eve
 | `INSTALL_FISHER` | tools/fish.sh | `yes` |
 | `SET_FISH_AS_DEFAULT` | tools/fish.sh | `yes` |
 | `INSTALL_DOCKER_DESKTOP` | dev/docker.sh | `yes` |
+| `DOCKER_ROOTLESS_ENABLE_LINGER` | dev/docker-rootless.sh | `yes` |
+| `DOCKER_PRUNE_IMAGES` | tools/docker-maintenance.sh | `dangling` (or `all`) |
+| `DOCKER_PRUNE_VOLUMES` | tools/docker-maintenance.sh | `no` |
+| `DOCKER_PRUNE_UNTIL` | tools/docker-maintenance.sh | `168h` |
 | `SETUP_LOG_FILE` | setup.sh | `$HOME/ubuntu-setup.log` |
 | `SWAP_SIZE_GB` | essentials/swap.sh | `4` |
 | `SWAP_FILE` / `FSTAB_FILE` | essentials/swap.sh | `/swapfile` / `/etc/fstab` |

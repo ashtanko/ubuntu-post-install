@@ -1,0 +1,63 @@
+# installer|reason
+essentials/swap.sh|system configuration task; no independently versioned software is installed
+essentials/firewall.sh|Ubuntu package and system policy are maintained through APT and UFW configuration
+essentials/auto-updates.sh|configures Ubuntu's unattended-upgrades service rather than a standalone tool
+essentials/locale-timezone.sh|system configuration task; no independently versioned software is installed
+essentials/gnome-settings.sh|desktop configuration task; GNOME packages are maintained through APT
+essentials/journald.sh|system configuration task; systemd is maintained through Ubuntu updates
+essentials/fstrim.sh|system configuration task; systemd/util-linux are maintained through Ubuntu updates
+essentials/motd-news.sh|system configuration task; no independently versioned software is installed
+essentials/sysctl-limits.sh|system configuration task; no independently versioned software is installed
+essentials/system-info.sh|diagnostic task; it does not install independently versioned software
+essentials/fail2ban.sh|Ubuntu package is maintained through APT
+essentials/lynis.sh|Ubuntu package is maintained through APT
+system/base.sh|performs system-wide APT maintenance itself; it is not one project-owned tool
+system/hostname.sh|system configuration task; no independently versioned software is installed
+system/user-groups.sh|system configuration task; no independently versioned software is installed
+system/ntp.sh|Ubuntu system service is maintained through APT
+system/hosts-dns.sh|system configuration task; systemd-resolved is maintained through Ubuntu updates
+system/sudoers.sh|system configuration task; no independently versioned software is installed
+system/keyboard.sh|Ubuntu package is maintained through APT
+system/gpg.sh|credential/configuration task; GnuPG is maintained through APT
+system/ssh.sh|credential/configuration task; OpenSSH is maintained through APT
+apps/browsers.sh|configured browser packages are maintained through their APT repositories
+apps/guake.sh|Ubuntu package is maintained through APT
+apps/postman.sh|the application manages its own updates
+apps/warp.sh|vendor package is maintained through its configured APT repository
+apps/bitwarden-cli.sh|the standalone CLI has no documented in-place updater; bw update only checks availability
+apps/flameshot.sh|Ubuntu package is maintained through APT
+dev/java.sh|configured OpenJDK packages are maintained through APT
+dev/docker.sh|Docker packages are maintained through the configured APT repository
+dev/docker-rootless.sh|configures an existing Docker installation; it does not own a separately updated tool
+dev/kubernetes.sh|installs several package/release-managed tools with no single ownership-compatible updater
+dev/terraform.sh|HashiCorp and companion packages are maintained through their package/install provenance
+dev/dotnet.sh|Microsoft packages are maintained through the configured APT repository
+dev/gcloud.sh|Google Cloud packages are maintained through the configured APT repository
+dev/azure-cli.sh|Microsoft packages are maintained through the configured APT repository
+dev/cpp.sh|Ubuntu compiler and build-tool packages are maintained through APT
+tools/cli-tools.sh|bulk Ubuntu package set is maintained through APT
+tools/modern-cli.sh|mixed package set has no single ownership-compatible updater
+tools/btop.sh|Ubuntu package is maintained through APT
+tools/fonts.sh|downloaded font assets have no documented in-place updater
+tools/git-config.sh|configuration task; it does not install independently versioned software
+tools/backup-home.sh|backup operation; it does not install independently versioned software
+tools/system-maintenance.sh|maintenance operation; it does not install independently versioned software
+tools/wireshark.sh|Ubuntu package is maintained through APT
+tools/hadolint.sh|upstream provides release binaries but no documented in-place updater
+tools/trivy.sh|vendor package is maintained through the configured APT repository
+tools/docker-maintenance.sh|maintenance operation; it does not install independently versioned software
+tools/network-tools.sh|bulk Ubuntu package set is maintained through APT
+ide/zed.sh|the application manages its own updates
+ide/jetbrains-toolbox.sh|JetBrains Toolbox manages its own updates
+ide/cursor.sh|the application manages its own updates
+ide/dbeaver.sh|vendor package is maintained through the configured APT repository
+ai/ollama.sh|the documented rerun path executes a mutable installer without an independently authenticated script payload
+ai/ollama-models.sh|model-data maintenance is separate from updating the Ollama executable
+ai/qwen-code.sh|the standalone rerun installer publishes no documented checksum or detached signature
+ai/fabric.sh|documented Go upgrade changes provenance from the standalone installation used by this project
+ai/prompt-runner.sh|repository-local wrapper has no independent upstream software release
+software/virtualbox.sh|Ubuntu/vendor packages are maintained through APT
+software/boxes.sh|Ubuntu virtualization packages are maintained through APT
+software/vmware.sh|installs prerequisites only; VMware Workstation itself is not owned by this project
+vpn/nord.sh|vendor package is maintained through its configured APT repository
+vpn/tailscale.sh|vendor package is maintained through its configured APT repository

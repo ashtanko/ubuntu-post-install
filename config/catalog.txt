@@ -29,6 +29,7 @@ apps|Apps|Bitwarden CLI|apps/bitwarden-cli.sh
 apps|Apps|Flameshot (screenshots)|apps/flameshot.sh
 dev|Development|Java (OpenJDK 8/11/17/21/25)|dev/java.sh
 dev|Development|Docker Engine + Docker Desktop|dev/docker.sh
+dev|Development|Rootless Docker (unprivileged daemon)|dev/docker-rootless.sh
 dev|Development|Flutter SDK + Linux desktop|dev/flutter.sh
 dev|Development|Node.js (via NVM)|dev/node.sh
 dev|Development|Python 3 + pyenv + poetry|dev/python.sh
@@ -62,6 +63,11 @@ tools|Terminal Tools|Wireshark|tools/wireshark.sh
 tools|Terminal Tools|chezmoi (dotfiles manager)|tools/dotfiles.sh
 tools|Terminal Tools|rclone (cloud storage sync)|tools/rclone.sh
 tools|Terminal Tools|lazydocker (Docker TUI)|tools/lazydocker.sh
+tools|Terminal Tools|ctop (container metrics TUI)|tools/ctop.sh
+tools|Terminal Tools|dive (Docker image layer explorer)|tools/dive.sh
+tools|Terminal Tools|hadolint (Dockerfile linter)|tools/hadolint.sh
+tools|Terminal Tools|Trivy (container/IaC vulnerability scanner)|tools/trivy.sh
+tools|Terminal Tools|Docker maintenance (prune images/cache)|tools/docker-maintenance.sh
 tools|Terminal Tools|tmux config (TPM + starter .tmux.conf)|tools/tmux-config.sh
 tools|Terminal Tools|restic (incremental encrypted backups)|tools/restic.sh
 tools|Terminal Tools|Network tools (mtr, nmap, dig, iperf3...)|tools/network-tools.sh

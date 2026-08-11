@@ -17,7 +17,7 @@ source "$GITHUB_HELPER" || { echo "❌ Missing github helper: $GITHUB_HELPER" >&
 
 echo "🚀 Installing lazydocker (terminal UI for Docker)..."
 
-if command -v lazydocker &>/dev/null; then
+if command -v lazydocker &>/dev/null && [ "${UPI_LAZYDOCKER_UPDATE:-0}" != "1" ]; then
     echo "✅ lazydocker already installed ($(lazydocker --version 2>/dev/null | head -1))"
     exit 0
 fi
@@ -39,7 +39,12 @@ LD_URL="https://github.com/jesseduffield/lazydocker/releases/download/${LD_VERSI
 
 echo "📦 Downloading lazydocker $LD_VERSION..."
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
+STAGE=""
+cleanup() {
+    rm -rf "$TMP"
+    [ -z "$STAGE" ] || sudo rm -f "$STAGE"
+}
+trap cleanup EXIT
 wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP/lazydocker.tar.gz" "$LD_URL"
 
 echo "🔒 Verifying checksum..."
@@ -53,14 +58,21 @@ echo "$EXPECTED_SHA  $TMP/lazydocker.tar.gz" | sha256sum --check --quiet
 echo "✅ Checksum verified"
 
 tar -xzf "$TMP/lazydocker.tar.gz" -C "$TMP"
-sudo install -m 0755 "$TMP/lazydocker" "$BIN_DIR/lazydocker"
+[ -f "$TMP/lazydocker" ] || { echo "❌ lazydocker binary not found in tarball"; exit 1; }
+STAGE=$(sudo mktemp "$BIN_DIR/.lazydocker-stage.XXXXXX")
+sudo install -m 0755 "$TMP/lazydocker" "$STAGE"
+STAGE_VERSION=$("$STAGE" --version 2>/dev/null | head -1) \
+    || { echo "❌ staged lazydocker binary failed its version check"; exit 1; }
+[ -n "$STAGE_VERSION" ] || { echo "❌ staged lazydocker binary returned no version"; exit 1; }
+sudo mv -f "$STAGE" "$BIN_DIR/lazydocker"
+STAGE=""
 
-if ! command -v lazydocker &>/dev/null; then
+if [ ! -x "$BIN_DIR/lazydocker" ]; then
     echo "❌ lazydocker installation failed or is not in PATH"
     exit 1
 fi
 
 echo ""
-echo "✅ lazydocker installed ($LD_VERSION) → $BIN_DIR/lazydocker"
+echo "✅ lazydocker installed ($STAGE_VERSION) → $BIN_DIR/lazydocker"
 echo "💡 Run 'lazydocker' inside any directory with a docker/compose context"
 echo "💡 Needs dev/docker.sh (or an existing Docker install) to be useful"
