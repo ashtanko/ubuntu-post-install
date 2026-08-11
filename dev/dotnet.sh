@@ -14,8 +14,23 @@ load_config "$REPO_ROOT"
 
 echo "🚀 Installing .NET SDK..."
 
+# A version the caller pinned is honoured exactly; a defaulted one may fall
+# back to whatever the enabled repos actually carry (see below).
+DOTNET_VERSION_PINNED="${DOTNET_VERSION:+yes}"
 DOTNET_VERSION="${DOTNET_VERSION:-8.0}"
 SDK_PACKAGE="dotnet-sdk-${DOTNET_VERSION}"
+
+# `apt-cache policy` prints nothing for an unknown package and
+# "Candidate: (none)" for one that exists but cannot be installed.
+apt_has_candidate() {
+    apt-cache policy "$1" 2>/dev/null | grep -q 'Candidate: [^(]'
+}
+
+available_sdk_versions() {
+    apt-cache pkgnames dotnet-sdk- 2>/dev/null \
+        | sed -n 's/^dotnet-sdk-\([0-9][0-9]*\.[0-9][0-9]*\)$/\1/p' \
+        | sort -uV
+}
 
 if command -v dotnet &>/dev/null && dotnet --list-sdks 2>/dev/null | grep -q "^${DOTNET_VERSION}\."; then
     echo "✅ .NET SDK $DOTNET_VERSION already installed"
@@ -58,8 +73,40 @@ if [ ! -f /etc/apt/sources.list.d/microsoft-prod.list ]; then
     rm -f "$MS_PROD_DEB"
 fi
 
-echo "📦 Installing $SDK_PACKAGE..."
 sudo apt-get update
+
+# Not every Ubuntu release carries every .NET major. Microsoft's repo ships no
+# dotnet packages at all for 26.04 (resolute), and Ubuntu's own archive there
+# has only 10.0 — so the 8.0 default is simply unavailable. Install the newest
+# SDK the enabled repos do offer rather than failing on a stale default.
+if ! apt_has_candidate "$SDK_PACKAGE"; then
+    AVAILABLE=$(available_sdk_versions | tr '\n' ' ')
+    if [ -n "$DOTNET_VERSION_PINNED" ]; then
+        echo "❌ $SDK_PACKAGE is not available on Ubuntu $CODENAME_VERSION"
+        echo "   Available SDK versions here: ${AVAILABLE:-none}"
+        exit 1
+    fi
+
+    FALLBACK=$(available_sdk_versions | tail -1)
+    if [ -z "$FALLBACK" ]; then
+        echo "❌ No dotnet-sdk-* package is available on Ubuntu $CODENAME_VERSION"
+        exit 1
+    fi
+
+    echo "⚠️  $SDK_PACKAGE is not available on Ubuntu $CODENAME_VERSION — installing dotnet-sdk-$FALLBACK instead"
+    DOTNET_VERSION="$FALLBACK"
+    SDK_PACKAGE="dotnet-sdk-${DOTNET_VERSION}"
+
+    # Re-check with the resolved version so a re-run exits early instead of
+    # handing apt a package it has already installed.
+    if command -v dotnet &>/dev/null && dotnet --list-sdks 2>/dev/null | grep -q "^${DOTNET_VERSION}\."; then
+        echo "✅ .NET SDK $DOTNET_VERSION already installed"
+        dotnet --list-sdks | sed 's/^/   /'
+        exit 0
+    fi
+fi
+
+echo "📦 Installing $SDK_PACKAGE..."
 sudo apt-get install -y "$SDK_PACKAGE"
 
 if ! dotnet --list-sdks 2>/dev/null | grep -q "^${DOTNET_VERSION}\."; then
