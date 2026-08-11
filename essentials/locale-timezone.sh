@@ -56,7 +56,8 @@ if locale -a 2>/dev/null | grep -qiE "^${DESIRED_LOCALE//-/}$|^${DESIRED_LOCALE}
     echo "✅ Locale $DESIRED_LOCALE already generated"
 else
     echo "📦 Ensuring locales package + generating $DESIRED_LOCALE..."
-    sudo apt install -y locales
+    sudo apt-get update
+    sudo apt-get install -y locales
     sudo locale-gen "$DESIRED_LOCALE"
 fi
 

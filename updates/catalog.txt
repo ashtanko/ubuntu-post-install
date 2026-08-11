@@ -1,0 +1,45 @@
+# updater|installer(s)|update method
+update-aider.sh|ai/aider.sh|aider --upgrade
+update-all.sh|updates/catalog.txt|aggregate every updater in this catalog
+update-android-studio.sh|ide/android-studio.sh|snap refresh android-studio
+update-antigravity.sh|ai/antigravity.sh|targeted APT package upgrade
+update-atuin.sh|tools/atuin.sh|atuin update
+update-aws-cli.sh|dev/aws-cli.sh|signature-verified AWS CLI v2 installer --update
+update-bun.sh|dev/bun.sh|bun upgrade
+update-chezmoi.sh|tools/dotfiles.sh|chezmoi upgrade
+update-claude.sh|ai/claude.sh|targeted APT package or npm global upgrade, whichever owns the executable
+update-cline.sh|ai/cline.sh|cline update
+update-codex.sh|ai/codex.sh|codex update
+update-composer.sh|dev/php.sh|composer self-update
+update-ctop.sh|tools/ctop.sh|install the checksum-verified latest official release
+update-cursor-agent.sh|ai/cursor-agent.sh|cursor-agent update
+update-deno.sh|dev/deno.sh|deno upgrade
+update-dive.sh|tools/dive.sh|install the verified latest official release package
+update-fisher.sh|tools/fish.sh|fisher update
+update-flutter.sh|dev/flutter.sh|flutter upgrade
+update-gemini.sh|ai/gemini.sh|npm install the latest stable package in the owning prefix
+update-gitleaks.sh|tools/gitleaks.sh|install the checksum-verified latest official release
+update-github-copilot.sh|ai/github-copilot.sh|copilot update
+update-go.sh|dev/go.sh|replace the SDK with the verified latest stable Go release
+update-goose.sh|ai/goose.sh|goose update
+update-huggingface-cli.sh|ai/huggingface-cli.sh|hf update
+update-just.sh|tools/just.sh|install the verified latest official release
+update-lazydocker.sh|tools/lazydocker.sh|install the verified latest official release
+update-llama-cpp.sh|ai/llama-cpp.sh|fast-forward source checkout and rebuild existing CMake configuration
+update-mcp-inspector.sh|ai/mcp-inspector.sh|npm install the latest package in the owning prefix
+update-mistral-vibe.sh|ai/mistral-vibe.sh|uv tool upgrade mistral-vibe
+update-node.sh|dev/node.sh|update the official NVM checkout then install and select the latest Node.js LTS
+update-nvim.sh|ide/nvim.sh|replace the managed installation only when the official release digest is verifiable
+update-oh-my-zsh.sh|tools/zsh.sh|Oh My Zsh automation upgrade script
+update-opencode.sh|ai/opencode.sh|opencode upgrade using its original curl install method
+update-pipx-tools.sh|dev/python.sh,dev/databases.sh,dev/podman.sh,tools/pre-commit-setup.sh,ai/llm-cli.sh,ai/litellm.sh|pipx upgrade each installed named application
+update-pyenv.sh|dev/python.sh|fast-forward the clean pyenv checkout
+update-rbenv.sh|dev/ruby.sh|fast-forward the clean rbenv and ruby-build checkouts
+update-rclone.sh|tools/rclone.sh|rclone selfupdate
+update-restic.sh|tools/restic.sh|restic self-update
+update-rust.sh|dev/rust.sh|rustup update
+update-starship.sh|tools/starship.sh|install the checksum-verified latest official release asset
+update-tpm.sh|tools/tmux-config.sh|fast-forward the clean TPM checkout
+update-vscode-extensions.sh|ide/vscode-extensions.sh|code --update-extensions
+update-vscode.sh|apps/vscode.sh|targeted Microsoft APT package upgrade
+update-yq.sh|tools/yq.sh|install the checksum-verified latest official release

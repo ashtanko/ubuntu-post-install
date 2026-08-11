@@ -48,7 +48,7 @@ install_nerd_font() {
         tmp=$(mktemp -d)
         trap 'rm -rf "$tmp"' EXIT
 
-        wget --tries=3 --waitretry=2 -q --show-progress -O "$tmp/${name}.tar.xz" "$url"
+        wget --tries=3 --waitretry=2 -nv --show-progress -O "$tmp/${name}.tar.xz" "$url"
         mkdir -p "$tmp/extracted"
         tar -xJf "$tmp/${name}.tar.xz" -C "$tmp/extracted" \
             --wildcards --no-anchored '*.[ot]tf'

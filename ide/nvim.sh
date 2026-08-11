@@ -46,7 +46,7 @@ if [[ -e "$INSTALL_DIR" || -L "$INSTALL_DIR" ]] \
 fi
 
 # Skip if a recent enough nvim is on PATH
-if command -v nvim &>/dev/null; then
+if command -v nvim &>/dev/null && [ "${UPI_NVIM_UPDATE:-0}" != "1" ]; then
     INSTALLED=$(nvim --version | head -1 | awk '{print $2}' | tr -d 'v')
     echo "✅ Neovim $INSTALLED already on PATH ($(command -v nvim))"
     echo "💡 To force a reinstall, remove $INSTALL_DIR and re-run."
@@ -71,6 +71,11 @@ esac
 
 URL="${NVIM_ARCHIVE_URL:-https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/${ASSET}}"
 
+if [ "${UPI_NVIM_UPDATE:-0}" = "1" ] && [ -n "${NVIM_ARCHIVE_URL:-}" ]; then
+    echo "❌ Automatic Neovim updates do not allow a custom archive URL"
+    exit 1
+fi
+
 TMP=$(mktemp -d)
 STAGE=""
 BACKUP=""
@@ -82,7 +87,7 @@ cleanup() {
     fi
 }
 trap cleanup EXIT
-wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP/nvim.tar.gz" "$URL"
+wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP/nvim.tar.gz" "$URL"
 
 # A custom mirror is untrusted, so it must always declare its digest.
 EXPECTED_SHA="${NVIM_ARCHIVE_SHA256:-}"
@@ -104,9 +109,17 @@ if [ -z "$EXPECTED_SHA" ]; then
     fi
 fi
 
+if [ -n "$EXPECTED_SHA" ] && [[ ! "$EXPECTED_SHA" =~ ^[0-9a-fA-F]{64}$ ]]; then
+    echo "❌ Neovim checksum is not a valid SHA-256 digest"
+    exit 1
+fi
+
 if [ -n "$EXPECTED_SHA" ]; then
     echo "$EXPECTED_SHA  $TMP/nvim.tar.gz" | sha256sum --check --quiet
     echo "✅ Checksum verified"
+elif [ "${UPI_NVIM_UPDATE:-0}" = "1" ]; then
+    echo "❌ Refusing to replace Neovim during an automatic update without a valid checksum"
+    exit 1
 else
     echo "⚠️  Neovim $NVIM_VERSION publishes no checksum asset — cannot verify the download"
     echo "   Fetched over TLS from github.com; set NVIM_ARCHIVE_SHA256 to enforce a digest."

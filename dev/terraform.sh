@@ -71,19 +71,49 @@ ${HC_SUITE} main" \
     echo "✅ terraform installed ($(terraform version | head -1))"
 fi
 
-# --- tflint (official installer; resolves arch + latest release) ---
+# --- tflint (GitHub release; checksum-verified zip) ---
+# Deliberately not upstream's `curl .../master/install_linux.sh | sudo bash`:
+# that pipes a mutable branch URL straight into root. Resolving the release tag
+# and verifying the published digest matches how tools/just.sh, tools/yq.sh, and
+# tools/lazydocker.sh install their binaries.
 if command -v tflint &>/dev/null; then
     echo "✅ tflint already installed ($(tflint --version | head -1))"
 else
-    # The installer unpacks a .zip, and unzip isn't on a stock Ubuntu install.
+    # The release ships a .zip, and unzip isn't on a stock Ubuntu install.
     if ! command -v unzip &>/dev/null; then
-        echo "📦 Installing unzip (required by the tflint installer)..."
+        echo "📦 Installing unzip (required to unpack the tflint release)..."
         sudo apt-get update
         sudo apt-get install -y unzip
     fi
-    echo "📦 Installing tflint via official installer..."
-    curl -fsSL --retry 3 --retry-all-errors https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | sudo bash
-    echo "✅ tflint installed ($(tflint --version | head -1))"
+
+    echo "🔍 Resolving latest tflint release..."
+    TFLINT_VERSION=$(latest_github_tag terraform-linters/tflint)
+    case "$ARCH" in
+        amd64|arm64) TFLINT_ARCH="$ARCH" ;;
+        *) echo "❌ Unsupported architecture for tflint: $ARCH"; exit 1 ;;
+    esac
+    TFLINT_ASSET="tflint_linux_${TFLINT_ARCH}.zip"
+    TFLINT_BASE="https://github.com/terraform-linters/tflint/releases/download/${TFLINT_VERSION}"
+
+    echo "📦 Downloading tflint $TFLINT_VERSION..."
+    TMP_TFLINT=$(mktemp -d)
+    trap 'rm -rf "$TMP_TFLINT"' EXIT
+    wget --tries=3 --waitretry=2 -nv --show-progress \
+        -O "$TMP_TFLINT/$TFLINT_ASSET" "${TFLINT_BASE}/${TFLINT_ASSET}"
+
+    echo "🔒 Verifying checksum..."
+    curl -fsSL --retry 3 --retry-all-errors -o "$TMP_TFLINT/checksums.txt" "${TFLINT_BASE}/checksums.txt"
+    EXPECTED_SHA=$(awk -v want="$TFLINT_ASSET" '$2 == want {print $1; exit}' "$TMP_TFLINT/checksums.txt")
+    [[ "$EXPECTED_SHA" =~ ^[0-9a-fA-F]{64}$ ]] \
+        || { echo "❌ tflint checksum manifest is missing a valid digest for $TFLINT_ASSET"; exit 1; }
+    echo "$EXPECTED_SHA  $TMP_TFLINT/$TFLINT_ASSET" | sha256sum --check --quiet
+    echo "✅ Checksum verified"
+
+    unzip -q -o "$TMP_TFLINT/$TFLINT_ASSET" -d "$TMP_TFLINT"
+    [ -f "$TMP_TFLINT/tflint" ] || { echo "❌ tflint binary not found in the release zip"; exit 1; }
+    sudo install -m 0755 "$TMP_TFLINT/tflint" "$BIN_DIR/tflint"
+    rm -rf "$TMP_TFLINT"
+    echo "✅ tflint installed → $BIN_DIR/tflint ($(tflint --version | head -1))"
 fi
 
 # --- tfsec (GitHub release; single binary) ---
@@ -102,7 +132,7 @@ else
     TMP=$(mktemp)
     # shellcheck disable=SC2064
     trap "rm -f '$TMP'" EXIT
-    wget --tries=3 --waitretry=2 -q --show-progress -O "$TMP" "$TFSEC_URL"
+    wget --tries=3 --waitretry=2 -nv --show-progress -O "$TMP" "$TFSEC_URL"
     sudo install -m 0755 "$TMP" "$BIN_DIR/tfsec"
     echo "✅ tfsec installed → $BIN_DIR/tfsec"
 fi

@@ -42,11 +42,31 @@ fi
 IMAGE="ubuntu-setup-test:${UBUNTU_VERSION}"
 
 echo "🐳 Building image $IMAGE..."
-docker build \
-    --build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}" \
-    -t "$IMAGE" \
-    -f "$REPO_ROOT/tests/Dockerfile" \
-    "$REPO_ROOT/tests"
+# CI sets DOCKER_BUILD_CACHE_DIR so the image's apt layer survives between runs;
+# without it (the local default) plain `docker build` uses the daemon's own
+# layer cache and needs no extra setup. The src/dest split is buildx's
+# documented workaround for a local cache that otherwise grows without bound.
+CACHE_DIR="${DOCKER_BUILD_CACHE_DIR:-}"
+if [ -n "$CACHE_DIR" ] && docker buildx version >/dev/null 2>&1; then
+    build_args=(--load --build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}")
+    if [ -d "$CACHE_DIR" ]; then
+        build_args+=(--cache-from "type=local,src=${CACHE_DIR}")
+    fi
+    build_args+=(--cache-to "type=local,dest=${CACHE_DIR}.new,mode=max")
+    docker buildx build \
+        "${build_args[@]}" \
+        -t "$IMAGE" \
+        -f "$REPO_ROOT/tests/Dockerfile" \
+        "$REPO_ROOT/tests"
+    rm -rf "$CACHE_DIR"
+    mv "${CACHE_DIR}.new" "$CACHE_DIR"
+else
+    docker build \
+        --build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}" \
+        -t "$IMAGE" \
+        -f "$REPO_ROOT/tests/Dockerfile" \
+        "$REPO_ROOT/tests"
+fi
 
 declare -i selected=0 passed=0 failed=0 skipped=0
 declare -a fails=()

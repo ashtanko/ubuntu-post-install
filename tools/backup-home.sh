@@ -103,4 +103,9 @@ SIZE=$(du -h "$ARCHIVE" | awk '{print $1}')
 echo ""
 echo "✅ Backup created: $ARCHIVE ($SIZE)"
 echo "💡 Restore with: tar -xzf $ARCHIVE -C \$HOME"
-[[ "$ENCRYPT" == "yes" ]] && echo "💡 Decrypt first:  gpg --decrypt $ARCHIVE > out.tar.gz"
+# Not `[[ … ]] && echo`: that form is the last command in the script, so on the
+# default (unencrypted) path it would evaluate false and exit 1 — reporting a
+# successful backup as FAILED and skipping the completion marker.
+if [[ "$ENCRYPT" == "yes" ]]; then
+    echo "💡 Decrypt first:  gpg --decrypt $ARCHIVE > out.tar.gz"
+fi

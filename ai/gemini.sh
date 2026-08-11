@@ -29,6 +29,7 @@ else
     GPG_TMP=$(mktemp --suffix=.gpg)
     trap 'rm -f "$GPG_TMP"' EXIT
 
+    sudo apt-get update
     sudo apt-get install -y wget gpg ca-certificates
 
     wget --tries=3 --waitretry=2 -qO- https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \

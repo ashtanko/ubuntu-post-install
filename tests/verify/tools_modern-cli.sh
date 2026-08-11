@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-# Tools from apt + GitHub releases. zoxide lands in ~/.local/bin, so add it to PATH for the check.
+# Tools from apt + GitHub releases. The fd symlink lands in ~/.local/bin, so add it to PATH.
 export PATH="$HOME/.local/bin:$PATH"
 required=(lazygit delta btop direnv hyperfine dust tldr zoxide)
 for cmd in "${required[@]}"; do

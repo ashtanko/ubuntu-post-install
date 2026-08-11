@@ -79,7 +79,7 @@ Then add a row to [docs/CONFIG.md](CONFIG.md) and the matching commented-out lin
 
 ## Test wiring
 
-Every selectable script has a user-facing row in [config/catalog.txt](../config/catalog.txt), and every script in the repo has a row in [tests/manifest.sh](../tests/manifest.sh). CI rejects missing or stale entries.
+Every selectable installer has a user-facing row in [config/catalog.txt](../config/catalog.txt), and every script in the repo has a row in [tests/manifest.sh](../tests/manifest.sh). Maintenance utilities such as `updates/*.sh` are intentionally not selectable during a fresh install. Each selectable installer must also appear in an installer column in [updates/catalog.txt](../updates/catalog.txt) or have a precise reason in [updates/skipped.txt](../updates/skipped.txt). CI rejects missing or stale coverage.
 
 Format:
 
@@ -108,15 +108,12 @@ If a one-liner verify isn't enough, drop a script at `tests/verify/<category>_<n
 
 See [TESTING.md](TESTING.md) for the full harness reference.
 
-## Wire into `setup.sh`
+## Wire selectable installers into `setup.sh`
 
-To make your script appear in the interactive menu, add an entry to the matching `*_ITEMS` array near the top of [setup.sh](../setup.sh):
+To make an installer appear in the interactive menu, add an entry to [config/catalog.txt](../config/catalog.txt):
 
-```bash
-declare -a DEV_ITEMS=(
-    ...
-    "My new tool|dev/mytool.sh"
-)
+```text
+dev|Development|My new tool|dev/mytool.sh
 ```
 
 Keep the label short — the menu wraps on long lines.
@@ -126,12 +123,13 @@ Keep the label short — the menu wraps on long lines.
 ```bash
 bash tests/lint.sh                                          # shellcheck
 bash tests/check-manifest-coverage.sh                       # manifest coverage
+bash tests/script-contract-regression.sh                    # script contracts
 bash tests/regression.sh                                    # local behavior regressions
 bash tests/run-in-docker.sh 24.04 smoke dev/mytool.sh       # smoke
 bash tests/run-in-docker.sh 24.04 idempotency dev/mytool.sh # idempotency
 ```
 
-If a targeted script is `compat=no`, the runner reports the skip and exits non-zero because no runnable work occurred. Validate that script manually on a suitable host and keep the manifest reason specific.
+If a targeted script is `compat=no`, the runner reports the skip and exits non-zero because no runnable work occurred. Validate that script manually on a suitable host and keep the manifest reason specific. `compat=no` scripts still have to satisfy the [script contracts](TESTING.md#script-contracts) — that check is the only automated coverage they get, so it is deliberately strict about `apt-get update` ordering, trailing bare conditionals, and piping downloads into a shell.
 
 ## CI gates
 

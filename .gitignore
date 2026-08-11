@@ -3,3 +3,6 @@ dist/
 *.tar.gz
 SHA256SUMS
 /bin/ubuntu-post-install-tui-*
+
+# JetBrains project files
+.idea/

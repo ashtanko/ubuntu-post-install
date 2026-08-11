@@ -32,6 +32,7 @@ case "$(uname -m)" in
 esac
 
 echo "📦 Ensuring curl + tar are present..."
+sudo apt-get update
 sudo apt-get install -y curl tar
 
 echo "🔍 Downloading Postman ($ARCH)..."

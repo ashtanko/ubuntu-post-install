@@ -23,13 +23,14 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 
 | Folder | Purpose |
 |---|---|
-| `essentials/` | Core OS bootstrap: swap, firewall, auto-updates, locale/TZ, GNOME tweaks, system info |
+| `essentials/` | Core OS bootstrap: swap, firewall, fail2ban, Lynis audit, auto-updates, locale/TZ, GNOME tweaks, system info |
 | `system/` | OS foundations: apt upgrade, keyboard remapping, GPG key, SSH key |
-| `apps/` | GUI applications: Chrome, Guake, Warp, VS Code |
-| `dev/` | Development runtimes: Java, Docker, Flutter, Node, Python, Rust, Go |
-| `tools/` | Shell, CLI, and dev helpers: Zsh, CLI tools, fonts, git config, pre-commit, backup, maintenance |
+| `apps/` | GUI applications + CLIs: Chrome, Guake, Warp, VS Code, Postman, Bitwarden CLI, Flameshot |
+| `dev/` | Development runtimes + cloud CLIs: Java, Docker (rootful + rootless), Podman, Flutter, Node, Deno, Bun, Python, Rust, Go, .NET, Ruby, PHP, C/C++, AWS/GCP/Azure |
+| `tools/` | Shell, CLI, and dev helpers: Zsh, CLI tools, tmux config, fonts, git config, pre-commit, gitleaks, backup + restic, maintenance, Wireshark, network tools, chezmoi, rclone, container tooling (lazydocker, ctop, dive, hadolint, Trivy), yq, just, Atuin |
 | `ide/` | Editors: Zed, Neovim, JetBrains Toolbox, VS Code extensions bulk install |
 | `ai/` | LLM tooling: Ollama, llama.cpp, Claude Code, Codex, Gemini, Copilot, Hugging Face, Aider, opencode, prompt-runner |
+| `updates/` | Maintenance wrappers for installed tools with documented scriptable updater paths; not part of the fresh-install menu |
 | `software/` | Virtualization: VirtualBox, GNOME Boxes/virt-manager, VMware prereqs |
 | `vpn/` | VPN clients: NordVPN |
 | `mobile/` | Mobile dev utilities (manual; not wired into setup.sh) |
@@ -50,6 +51,8 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `motd-news.sh` | Disables Ubuntu's `motd-news` ESM/livepatch login-banner ads (config file + systemd timer) |
 | `sysctl-limits.sh` | Raises inotify watch/instance limits and the open-file (`nofile`) limit for IDEs, docker, and bundlers |
 | `system-info.sh` | One-shot dump of CPU/RAM/GPU/disk/distro to `~/system-info-<ts>.log` |
+| `fail2ban.sh` | SSH brute-force protection via a `jail.d` drop-in; set `ENABLE_FAIL2BAN=no` to skip |
+| `lynis.sh` | One-shot Lynis security audit dumped to `~/lynis-audit-<ts>.log` |
 
 ### system/
 | Script | Purpose |
@@ -72,26 +75,40 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `postman.sh` | Postman API client — official tarball into `$POSTMAN_INSTALL_DIR` (default `~/.local/share/Postman`), with `~/.local/bin/postman` symlink and `.desktop` entry |
 | `warp.sh` | Warp terminal |
 | `vscode.sh` | VS Code via Microsoft apt repo |
+| `bitwarden-cli.sh` | Bitwarden CLI (`bw`) — official Linux zip, amd64 only |
+| `flameshot.sh` | Flameshot annotated screenshot tool |
 
 ### dev/
 | Script | Purpose |
 |---|---|
 | `java.sh` | OpenJDK 8/11/17/21/25 — interactive menu or `JAVA_VERSION` env; installs side-by-side, switch default via `update-alternatives` |
 | `docker.sh` | Docker Engine + Docker Desktop + user group |
+| `docker-rootless.sh` | Rootless Docker daemon for the current user (`dockerd-rootless-setuptool.sh`); reports missing subuid/subgid rather than rewriting them |
 | `flutter.sh` | Flutter SDK (stable), Android deps, Linux desktop deps |
 | `node.sh` | Node.js via NVM — installs latest LTS |
 | `python.sh` | Python 3 + pyenv + pipx + poetry |
 | `rust.sh` | Rust toolchain via rustup |
 | `go.sh` | Latest Go SDK — version detection with fallback (VERSION endpoint → JSON) |
-| `databases.sh` | PostgreSQL/MySQL/Redis/SQLite CLI clients + pgcli/mycli/litecli (interactive shells via pipx) |
+| `databases.sh` | PostgreSQL/MySQL/Redis/SQLite/MongoDB CLI clients + pgcli/mycli/litecli (interactive shells via pipx) |
 | `kubernetes.sh` | kubectl + helm + k9s + kind + kustomize |
 | `aws-cli.sh` | AWS CLI v2 (official zip) + Session Manager plugin |
 | `terraform.sh` | Terraform (HashiCorp apt repo) + tflint + tfsec |
+| `dotnet.sh` | .NET SDK via Microsoft's apt repo; `$DOTNET_VERSION` picks the major.minor (default `8.0`) |
+| `ruby.sh` | Ruby via rbenv + ruby-build + bundler; `$RUBY_VERSION` pins a version (default: latest stable) |
+| `gcloud.sh` | Google Cloud CLI via Google's apt repo + `gke-gcloud-auth-plugin` for kubectl/GKE |
+| `azure-cli.sh` | Azure CLI (`az`) via Microsoft's official installer |
+| `podman.sh` | Podman + podman-compose (rootless containers); reports missing subuid/subgid rather than rewriting them |
+| `deno.sh` | Deno runtime via official installer into `$DENO_INSTALL` |
+| `bun.sh` | Bun runtime/package manager via official installer into `$BUN_INSTALL` |
+| `php.sh` | PHP (`ondrej/php` PPA) + common extensions + Composer (signature-verified) |
+| `cpp.sh` | C/C++ toolchain: gcc/clang, cmake, ninja, ccache, gdb/lldb, clang-format/tidy, cppcheck, valgrind |
 
 ### tools/
 | Script | Purpose |
 |---|---|
 | `zsh.sh` | Zsh + Oh My Zsh; set `INSTALL_OH_MY_ZSH=no` to skip OMZ |
+| `fish.sh` | Fish shell + Fisher plugin manager; `SET_FISH_AS_DEFAULT=no` leaves the login shell alone |
+| `starship.sh` | Starship cross-shell prompt, wired into Bash, Zsh, and Fish |
 | `cli-tools.sh` | bat, fzf, ripgrep, eza, jq, htop, tmux, tree, gh (GitHub CLI) |
 | `modern-cli.sh` | lazygit, delta, zoxide, btop, direnv, fd, dust, hyperfine, tldr (tealdeer) |
 | `btop.sh` | btop — modern resource/process monitor (apt) |
@@ -100,6 +117,22 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `pre-commit-setup.sh` | pre-commit framework via pipx + git template hook + starter `.pre-commit-config.yaml` |
 | `backup-home.sh` | Tar (optionally GPG-encrypted) backup of SSH/GPG/AWS/.config to `$BACKUP_DIR` |
 | `system-maintenance.sh` | apt autoremove/clean, journal vacuum, docker/snap/flatpak prune, user-cache trim |
+| `wireshark.sh` | Wireshark + tshark; preseeds non-root packet capture via the `wireshark` group |
+| `dotfiles.sh` | chezmoi dotfiles manager; optionally clones `$DOTFILES_REPO` (never auto-applies) |
+| `rclone.sh` | rclone cloud storage sync — pairs with `backup-home.sh` for offsite copies |
+| `lazydocker.sh` | lazydocker terminal UI for Docker (GitHub release, checksum-verified) |
+| `ctop.sh` | ctop — live per-container CPU/memory/net/IO metrics (GitHub release, checksum-verified) |
+| `dive.sh` | dive — explore a Docker image layer by layer (GitHub release `.deb`, checksum-verified) |
+| `hadolint.sh` | hadolint Dockerfile linter (GitHub release; upstream publishes no digest, so the download is ELF-checked) |
+| `trivy.sh` | Trivy image/filesystem/IaC vulnerability scanner via its official signed apt repo (release-independent `generic` suite) |
+| `docker-maintenance.sh` | Docker-only disk reclaim: containers, networks, images, build cache; volumes opt-in |
+| `tmux-config.sh` | TPM plugin manager + starter `~/.tmux.conf` (written only if absent); prefix rebound to `Ctrl-a` |
+| `restic.sh` | restic — deduplicated, encrypted, incremental backups; speaks rclone remotes natively |
+| `network-tools.sh` | mtr, nmap, dig, ss, lsof, nc, iperf3, HTTPie, whois |
+| `gitleaks.sh` | Standalone gitleaks secret scanner (also wired as a pre-commit hook by `pre-commit-setup.sh`) |
+| `yq.sh` | yq — the YAML counterpart to `jq` (checksum-verified from yq's hash matrix) |
+| `just.sh` | `just` command runner (GitHub release, checksum-verified) |
+| `atuin.sh` | Atuin searchable shell history, wired into Bash, Zsh, and Fish; sync is opt-in |
 
 ### ide/
 | Script | Purpose |
@@ -108,6 +141,9 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `vscode-extensions.sh` | Bulk-install extensions from `$VSCODE_EXTENSIONS` (whitespace-separated) |
 | `jetbrains-toolbox.sh` | JetBrains Toolbox app + desktop entry; pick IDEs from the Toolbox UI |
 | `nvim.sh` | Latest Neovim from official GitHub release tarball; writes starter `init.lua` if absent |
+| `android-studio.sh` | Android Studio via snap (`--classic`) — the SDK/emulator/device tooling `dev/flutter.sh` leaves out of scope |
+| `cursor.sh` | Cursor editor (official AppImage, amd64 only) — GUI counterpart to `ai/cursor-agent.sh`'s CLI agent |
+| `dbeaver.sh` | DBeaver Community via its official apt repo — GUI counterpart to `dev/databases.sh`'s CLI clients |
 
 ### ai/
 | Script | Purpose |
@@ -130,7 +166,7 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | `llm-cli.sh` | Provider-neutral LLM CLI via pipx |
 | `litellm.sh` | OpenAI-compatible LiteLLM proxy CLI via pipx |
 | `mcp-inspector.sh` | MCP server debugger via npm |
-| `antigravity.sh` | Antigravity auto-updater via Google APT repo |
+| `antigravity.sh` | Google Antigravity IDE via Google's signed APT repo (key fingerprint pinned); self-updates through apt |
 | `opencode.sh` | opencode CLI via official installer |
 | `prompt-runner.sh` | Installs `prompt` command — runs text/.prompt files against ollama / openai / anthropic |
 
@@ -145,6 +181,7 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 | Script | Purpose |
 |---|---|
 | `nord.sh` | NordVPN official Linux app via `install.sh`; adds user to `nordvpn` group; prints reminder to run `nordvpn login` |
+| `tailscale.sh` | Tailscale mesh VPN via the official installer; `$TAILSCALE_AUTHKEY` enables non-interactive `tailscale up` |
 
 ### mobile/
 | Script | Purpose |
@@ -161,6 +198,11 @@ All scripts require `sudo` where needed and will prompt for credentials. Scripts
 - GPG repo keys: added via `gpg --dearmor` to `/etc/apt/keyrings/` and pinned with `signed-by=` in the apt source
 - Latest GitHub release lookups: use the `latest_github_tag` helper (follows the `github.com/<owner>/<repo>/releases/latest` redirect), never `api.github.com` — unauthenticated API calls are rate-limited per IP and start returning 403 in CI
 - Network fetches: `curl --retry 3 --retry-all-errors`, so one dropped connection doesn't fail the whole script under `set -e`
+- `apt-get update` before every `apt-get install` of a repository package — `/var/lib/apt/lists` is empty on a fresh system and stale on an idle one. Installing a local `.deb` you already downloaded needs no index
+- Never pipe a download into a shell (`curl … | bash`). Fetch to a file, verify the digest where upstream publishes one, then run or install it — see [tools/just.sh](tools/just.sh) for the shape
+- Never end a script with a bare `[[ cond ]] && cmd`: as the last line it exits 1 whenever the condition is false, so setup.sh reports a successful run as FAILED and writes no marker. Use an `if` block
+
+The last three are enforced by [tests/script-contract-regression.sh](tests/script-contract-regression.sh), which runs against every script — including the ~30 that no Docker stage executes.
 
 ## setup.sh Behaviour
 
@@ -188,13 +230,32 @@ Copy `.env.example` to `.env` and fill in your values. `.env` is gitignored. Eve
 | `NVM_DIR` | dev/node.sh | `$HOME/.nvm` |
 | `PYENV_ROOT` | dev/python.sh | `$HOME/.pyenv` |
 | `GO_INSTALL_DIR` | dev/go.sh | `/usr/local/go` |
+| `GO_VERSION` | dev/go.sh | latest stable |
+| `GO_ARCHIVE_URL` / `GO_ARCHIVE_SHA256` | dev/go.sh | official release — a custom URL requires the checksum |
 | `JAVA_VERSION` | dev/java.sh | interactive prompt (fallback `21`) |
+| `DOTNET_VERSION` | dev/dotnet.sh | `8.0` |
+| `RBENV_ROOT` | dev/ruby.sh | `$HOME/.rbenv` |
+| `RUBY_VERSION` | dev/ruby.sh | latest stable |
+| `PHP_VERSION` | dev/php.sh | `8.3` |
+| `DENO_INSTALL` | dev/deno.sh | `$HOME/.deno` |
+| `BUN_INSTALL` | dev/bun.sh | `$HOME/.bun` |
 | `INSTALL_OH_MY_ZSH` | tools/zsh.sh | `yes` |
+| `INSTALL_FISHER` | tools/fish.sh | `yes` |
+| `SET_FISH_AS_DEFAULT` | tools/fish.sh | `yes` |
 | `INSTALL_DOCKER_DESKTOP` | dev/docker.sh | `yes` |
+| `DOCKER_ROOTLESS_ENABLE_LINGER` | dev/docker-rootless.sh | `yes` |
+| `DOCKER_PRUNE_IMAGES` | tools/docker-maintenance.sh | `dangling` (or `all`) |
+| `DOCKER_PRUNE_VOLUMES` | tools/docker-maintenance.sh | `no` |
+| `DOCKER_PRUNE_UNTIL` | tools/docker-maintenance.sh | `168h` |
 | `SETUP_LOG_FILE` | setup.sh | `$HOME/ubuntu-setup.log` |
 | `SWAP_SIZE_GB` | essentials/swap.sh | `4` |
+| `SWAP_FILE` / `FSTAB_FILE` | essentials/swap.sh | `/swapfile` / `/etc/fstab` |
 | `ENABLE_UFW` | essentials/firewall.sh | `yes` |
 | `ENABLE_AUTO_UPDATES` | essentials/auto-updates.sh | `yes` |
+| `ENABLE_FAIL2BAN` | essentials/fail2ban.sh | `yes` |
+| `FAIL2BAN_BANTIME` | essentials/fail2ban.sh | `1h` |
+| `FAIL2BAN_FINDTIME` | essentials/fail2ban.sh | `10m` |
+| `FAIL2BAN_MAXRETRY` | essentials/fail2ban.sh | `5` |
 | `TZ` | essentials/locale-timezone.sh | auto-detect via ipapi.co |
 | `LOCALE` | essentials/locale-timezone.sh | `en_US.UTF-8` |
 | `JOURNAL_MAX_USE` | essentials/journald.sh | `200M` |
@@ -208,13 +269,14 @@ Copy `.env.example` to `.env` and fill in your values. `.env` is gitignored. Eve
 | `SUDO_TIMESTAMP_TIMEOUT_MINUTES` | system/sudoers.sh | — unset = skip (opt-in only) |
 | `LLAMA_CPP_DIR` | ai/llama-cpp.sh | `$HOME/.local/src/llama.cpp` |
 | `OLLAMA_MODELS` | ai/ollama-models.sh | — required, whitespace-separated |
-| `CLAUDE_CHANNEL` | ai/claude.sh | `stable` |
+| `CLAUDE_CHANNEL` | ai/claude.sh, updates/update-claude.sh | `stable` |
 | `CODEX_RELEASE` | ai/codex.sh | `latest` |
 | `COPILOT_VERSION` | ai/github-copilot.sh | `latest` |
 | `CLINE_VERSION` | ai/cline.sh | `latest` |
 | `MCP_INSPECTOR_VERSION` | ai/mcp-inspector.sh | `latest` |
 | `LLM_VERSION` | ai/llm-cli.sh | `latest` |
 | `LITELLM_VERSION` | ai/litellm.sh | `latest` |
+| `OPENCODE_INSTALL_DIR` | ai/opencode.sh | `$HOME/.opencode` |
 | `PROMPT_BACKEND` | ai/prompt-runner.sh (`prompt` CLI) | `ollama` |
 | `PROMPT_MODEL` | ai/prompt-runner.sh | per-backend default |
 | `OLLAMA_HOST` | ai/prompt-runner.sh, ai/ollama-models.sh | `http://localhost:11434` |
@@ -223,10 +285,17 @@ Copy `.env.example` to `.env` and fill in your values. `.env` is gitignored. Eve
 | `VSCODE_EXTENSIONS` | ide/vscode-extensions.sh | — empty = no-op |
 | `JETBRAINS_TOOLBOX_DIR` | ide/jetbrains-toolbox.sh | `$HOME/.local/share/JetBrains/Toolbox` |
 | `NVIM_INSTALL_DIR` | ide/nvim.sh | `$HOME/.local/share/nvim-stable` |
+| `NVIM_VERSION` | ide/nvim.sh | latest release |
+| `NVIM_ARCHIVE_URL` / `NVIM_ARCHIVE_SHA256` | ide/nvim.sh | official release — a custom URL requires the checksum |
+| `CURSOR_INSTALL_DIR` | ide/cursor.sh | `$HOME/.local/share/Cursor` |
 | `POSTMAN_INSTALL_DIR` | apps/postman.sh | `$HOME/.local/share/Postman` |
 | `ENABLE_GIT_COMMIT_SIGNING` | tools/git-config.sh | `no` |
+| `GPG_KEY_ID` | system/gpg.sh, tools/git-config.sh | — unique `GIT_EMAIL` match |
+| `TMUX_PLUGIN_DIR` | tools/tmux-config.sh | `$HOME/.tmux/plugins/tpm` |
 | `BACKUP_DIR` | tools/backup-home.sh | `$HOME/backups` |
 | `BACKUP_ENCRYPT` | tools/backup-home.sh | `no` |
 | `BACKUP_GPG_RECIPIENT` | tools/backup-home.sh | `$GIT_EMAIL` |
+| `DOTFILES_REPO` | tools/dotfiles.sh | — unset = skip `chezmoi init` |
+| `TAILSCALE_AUTHKEY` | vpn/tailscale.sh | — unset = manual `tailscale up` login |
 
 When `GIT_NAME` and `GIT_EMAIL` are set, `system/gpg.sh` generates the key non-interactively (no passphrase, RSA 4096). Without them it falls back to the interactive `gpg --full-generate-key` wizard.
